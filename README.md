@@ -42,7 +42,7 @@ Most important hotkeys (full set see config-file):
 ```Super_L - w``` toggle tiling (on/off)  
 ```Super_L - a``` shrink width/height of master window and (re-)tile  
 ```Super_L - s``` enlarge width/height of master window and (re-)tile  
-```Super_L - .``` log name & tile of active window in /tmp/xpytile_&lt;USERNAME&gt;.log  
+```Super_L - .``` log name & title of active window in /tmp/xpytile_&lt;USERNAME&gt;.log  
 ```Super_L - -``` exit  
 
 
