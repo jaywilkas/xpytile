@@ -1,0 +1,264 @@
+# Config-file for tiling helper "xpytile"
+#
+# File: xpytilerc
+# place this file in XDG_CONFIG_HOME or if that's not set in ~/.config
+#
+
+
+# -----------------------------------------------------------------------------------------------------
+[General]
+# -----------------------------------------------------------------------------------------------------
+# Ignore windows when their name AND -if configured- title matches one of these regular expressions.
+# !title means: Ignore window when the name matches AND title does NOT match the regex.
+# Modal windows are ignored by default
+#
+# (The first 8 entries are specific for Xfce4)
+#
+ignoreWindows = name: "Wrapper-2.0"
+                name: "Xfdesktop"
+                name: "Xfwm4"
+                name: "Xfce4-(?!terminal).*"
+                name: "Exo-desktop-item-edit"
+                name: "Nm-connection-editor"
+                name: "Polkit-gnome-authentication-agent-1"
+                name: "Globaltime"
+                name: "Gimp"
+                name: "krusader" !title: "^Krusader$"
+                name: "Thunderbird" !title: "Mozilla Thunderbird$"
+                name: "Doublecmd" !title: "^Double Commander "
+                name: "jetbrains-pycharm" title: "(Confirm|Tip(p){0,1}|Settings)"
+
+                
+# Delay the auto-tiling when a new application was lauched and its name
+# matches one of these regexes.
+# For example LibreOffice needs some delay time.
+delayTilingWindowsWithNames = "Soffice"
+
+
+# Delay time [sec] for the auto-tiling, in case an application with one of
+# the above names was lauched.
+delayTimeTiling = 0.75
+
+
+# Use this tiler as default, when there are more desktops than configured
+# in [DefaultTilerPerDesktop]
+# Available Tilers:
+#  1  masterAndStackVertic    one window on the left, stack on the right side
+#  2  masterAndStackHoriz     one window on the upper, stack on the lower part
+#  3  horizontally            horizontal stack of windows, left to right, full height
+#  4  vertically              vertical stack of windows, from top to bottom, full width
+#  5  maximize                always maximize active window
+defaultTiler = 1
+
+# Use this value as default, when there are more desktops than configured
+# in [maximizeWhenOneWindowLeft]
+defaultMaximizeWhenOneWindowLeft = True
+
+# Edges with a distance smaller than margin are considered docked.
+margin = 100
+
+# Don't shrink width or height of a window smaller than this.
+minSize = 350
+
+# Step size when enlaging/shrinking master window by hotkey
+stepSize = 50
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Define the default/initial tiler for each desktop/workspace.
+# (Number of configured workspaces is not limited.)
+[DefaultTilerPerDesktop]
+# -----------------------------------------------------------------------------------------------------
+Desktop1 = 1
+Desktop2 = 1
+Desktop3 = 1
+Desktop4 = 5
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Define the default/initial behaviour when there is one window left
+# (Number of configured workspaces is not limited.)
+[maximizeWhenOneWindowLeft]
+# -----------------------------------------------------------------------------------------------------
+Desktop1 = True
+Desktop2 = True
+Desktop3 = True
+Desktop4 = True
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Tiler -  master and stack vertically
+[masterAndStackVertic]
+# -----------------------------------------------------------------------------------------------------
+# Number of windows to tile, remaining windows will be ignored
+maxNumWindows = 3
+# Default-width of master (rel. part of available screen width)
+defaultWidthMaster = 0.5
+# Maximize the last remaining window, when the 2nd last window got closed
+maximizeWhenOneWindowLeft = True
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Tiler -  stack from top to bottom, full width
+[vertically]
+# -----------------------------------------------------------------------------------------------------
+# Number of windows to tile, ignore remaining windows
+maxNumWindows = 3
+# Maximize the last remaining window, when the 2nd last window got closed
+maximizeWhenOneWindowLeft = True
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Tiler -  master and stack horizontally
+[masterAndStackHoriz]
+# -----------------------------------------------------------------------------------------------------
+# Number of windows to tile, ignore all remaining windows
+maxNumWindows = 3
+# Default-height of the master (rel. part of avail. screen height)
+defaultHeightMaster = 0.5
+# Maximize the last remaining window, when the 2nd last window got closed
+maximizeWhenOneWindowLeft = True
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Tiler -  stack from left to right, full height
+[horizontally]
+# -----------------------------------------------------------------------------------------------------
+# Number of windows to tile, ignore remaining windows
+maxNumWindows = 3
+# Maximize the last remaining window, when the 2nd last window got closed
+maximizeWhenOneWindowLeft = True
+
+
+
+# -----------------------------------------------------------------------------------------------------
+# Keycodes of the hotkeys
+# (The programm  xev  helps to figure them out.
+#  testModifier.py can be used to get the modifier-code.)
+[Hotkeys]
+# -----------------------------------------------------------------------------------------------------
+# Hotkey modifier
+# 64: "Super_L"
+# -1: any modifier
+modifier = 64
+
+# toggle status for the current desktop
+# whether to simultaneously resize docked windows
+# 24: "q"
+toggleResize = 24
+
+# toggle status for the current desktop
+# whether tiling is active
+# 25: "w"
+toggleTiling = 25
+
+# toggle status for the current desktop
+# whether to simultaneously resize docked windows
+# and whether tiling is active
+# 26: "e"
+toggleResizeAndTiling = 26
+
+# toggle status for the current desktop
+# whether to maximize the last window
+# when the 2nd last window got closed
+# 27: "r"
+toggleMaximizeWhenOneWindowLeft = 27
+
+# cycle all -not minimized- windows on the current desktop
+# 49: ^
+cycleWindows = 49
+
+# store the layout of the windows on the current desktop
+# 15: "6"
+storeCurrentWindowsLayout = 15
+
+# restore the layout of the windows geometry on the current desktop
+# 14: "5"
+recreateWindowsLayout = 14
+
+# switch to tiler "masterAndStackVertic" and do the tiling
+# 10: "1"
+tileMasterAndStackVertically = 10
+
+# switch to tiler "vertically" and do the tiling
+# 11: "2"
+tileVertically = 11
+
+# switch to tiler "masterAndStackHoriz" and do the tiling
+# 12: "3"
+tileMasterAndStackHorizontally = 12
+
+# switch to tiler "horizontally" and do the tiling
+# 13: "4"
+tileHorizontally = 13
+
+# switch to tiler "maximize" and maximize the window
+# 19: "0"
+tileMaximize = 19
+
+# exit the tiling helper
+# 61: "-"
+exit = 61
+
+# log name and tile of currently active window
+# in /tmp/xpytile_<USERNAME>.log
+# 60: '.'
+logActiveWindow = 60
+
+# shrink width/height of master window and (re-)tile
+# 38: "a"
+shrinkMaster = 38
+
+# enlarge width/height of master window and (re-)tile
+# 39: "s"
+enlargeMaster = 39
+
+
+# -----------------------------------------------------------------------------------------------------
+# Notifications are send (if turned on) on start-up
+# on exit, and when certain hotkeys are pressed.
+[Notification]
+# -----------------------------------------------------------------------------------------------------
+# Turn on / off notifications [True | False]
+active = True
+
+# Time [ms] the notification will be shown
+time = 2500
+
+# Notification summary, message  and icons
+on_Message = +++ ON +++
+off_Message = \-\-  off  \-\-
+
+tilingOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
+tilingOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+tiling_Summary = Tiling
+
+storeCurrentWindowsLayout_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
+storeCurrentWindowsLayout_Message = Layout stored
+storeCurrentWindowsLayout_Summary = Windows
+
+resizingOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
+resizingOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+resizing_Summary = Resizing
+
+maximizeWhenOneWindowLeftOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
+maximizeWhenOneWindowLeftOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+maximizeWhenOneWindowLeft_Summary = max. when one window
+
+start_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
+start_Message = +++ ON +++
+start_Summary = Tiling
+
+alreadyRunning_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
+alreadyRunning_Message = already on
+alreadyRunning_Summary = Tiling
+
+exit_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
+exit_Message = \-\- Exit \-\-
+exit_Summary = Tiling
