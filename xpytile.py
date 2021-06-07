@@ -313,7 +313,7 @@ def init(configFile='~/.config/xpytile.conf'):
     global NET_ACTIVE_WINDOW, NET_WM_DESKTOP, NET_CLIENT_LIST, NET_CURRENT_DESKTOP, NET_WM_STATE_MAXIMIZED_VERT
     global NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, NET_WM_STATE_HIDDEN, NET_WORKAREA, NET_WM_NAME, NET_WM_STATE_MODAL
 
-    disp = Xlib.display.Display(":0")
+    disp = Xlib.display.Display()
     Xroot = disp.screen().root
     screen = disp.screen()
 
