@@ -6,7 +6,7 @@ X-tiling helper
 with simultaneous resizing of docked (side-by-side) windows
 
 
-Copyright (C) 2021  jaywikas  <just4 [period] gmail [at] web [period] de>
+Copyright (C) 2021  jaywilkas  <just4 [period] gmail [at] web [period] de>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,17 +22,17 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-
 import time
 import datetime
 import sys
 import os
-import Xlib.display, Xlib.XK, Xlib.error
+import Xlib.display, Xlib.XK, Xlib.error, Xlib.protocol
 import subprocess
 import socket
 import configparser
 import argparse
 import re
+from functools import lru_cache
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -49,9 +49,9 @@ class _list(object):
         self.default_value = None
 
     def expand(self, i):
-        if self.default_value == None and len(self._list):
+        if self.default_value is None and len(self._list):
             self.default_value = self._list[0]
-        for n in range(len(self._list), i+1):
+        for n in range(len(self._list), i + 1):
             self._list.append(self.default_value)
 
     def __getitem__(self, i):
@@ -61,7 +61,7 @@ class _list(object):
 
     def __setitem__(self, i, val):
         if i >= len(self._list):
-            self.expand(i-1)
+            self.expand(i - 1)
         self._list[i] = val
 
     def append(self, val):
@@ -81,10 +81,10 @@ def cycle_windows():
     Cycles all -not minimized- windows of the current desktop
     :return:
     """
-    global tilingInfo, disp, Xroot, NET_CURRENT_DESKTOP
+    global disp, Xroot, NET_CURRENT_DESKTOP
 
     # get a list of all -not minimized and not ignored- windows of the current desktop
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
     winIDs = get_windows_on_desktop(currentDesktop)
 
     if len(winIDs) < 2:
@@ -96,7 +96,7 @@ def cycle_windows():
         except IndexError as e:
             winID_next = winIDs[0]
         set_window_position(winID, x=windowsInfo[winID_next]['x'], y=windowsInfo[winID_next]['y'])
-        set_window_size(winID, width=windowsInfo[winID_next]['width'],  height=windowsInfo[winID_next]['height'])
+        set_window_size(winID, width=windowsInfo[winID_next]['width'], height=windowsInfo[winID_next]['height'])
 
     disp.sync()
     update_windows_info()
@@ -123,13 +123,13 @@ def get_moved_border(winID, window):
         return moved_border
 
     if winInfo['x'] != geometry.x:
-        moved_border += 1   # left border
+        moved_border += 1  # left border
     if winInfo['y'] != geometry.y:
-        moved_border += 2   # upper border
+        moved_border += 2  # upper border
     if winInfo['x2'] != geometry.x + geometry.width - 1:
-        moved_border += 4   # right border
+        moved_border += 4  # right border
     if winInfo['y2'] != geometry.y + geometry.height - 1:
-        moved_border += 8   # lower border
+        moved_border += 8  # lower border
 
     return moved_border
 # ----------------------------------------------------------------------------------------------------------------------
@@ -165,18 +165,11 @@ def get_window_geometry(win):
     :param win:    window
     :return:       geometry of the top most parent window
     """
-    global Xroot
 
-    while True:
-        try:
-            parent = win.query_tree().parent
-            if parent.id == Xroot.id:
-                break
-            win = parent
-        except Xlib.error.BadWindow as e:
-            return None
-
-    return win.get_geometry()
+    try:
+        return get_parent_window(win).get_geometry()
+    except:
+        return None
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -227,6 +220,7 @@ def get_windows_on_desktop(desktop):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+@lru_cache
 def get_windows_title(window):
     """
     Get the title of the window.
@@ -256,17 +250,22 @@ def handle_key_event(keyCode, windowID_active, window_active):
     :param window_active:    active window
     :return:
     """
-    global hotkeys, tilingInfo
+    global hotkeys, tilingInfo, windowsInfo
 
     if keyCode == hotkeys['toggleresize']:
         toggle_resize()
     elif keyCode == hotkeys['toggletiling']:
         if toggle_tiling():
+            update_windows_info()
             tile_windows()
     elif keyCode == hotkeys['toggleresizeandtiling']:
         toggle_resize()
         if toggle_tiling():
+            update_windows_info()
             tile_windows()
+    elif keyCode == hotkeys['toggledecoration']:
+        toggle_window_decoration()
+        tile_windows()
     elif keyCode == hotkeys['enlargemaster']:
         tile_windows(resizeMaster=tilingInfo['stepSize'])
     elif keyCode == hotkeys['shrinkmaster']:
@@ -274,7 +273,11 @@ def handle_key_event(keyCode, windowID_active, window_active):
     elif keyCode == hotkeys['togglemaximizewhenonewindowleft']:
         toggle_maximize_when_one_window()
     elif keyCode == hotkeys['cyclewindows']:
+        update_windows_info()
         cycle_windows()
+    elif keyCode == hotkeys['swapwindows']:
+        update_windows_info()
+        swap_windows(windowID_active)
     elif keyCode == hotkeys['tilemasterandstackvertically']:
         update_windows_info()
         tile_windows(manuallyTriggered=True, tilerNumber=1)
@@ -293,10 +296,14 @@ def handle_key_event(keyCode, windowID_active, window_active):
     elif keyCode == hotkeys['recreatewindowslayout']:
         recreate_window_geometries()
     elif keyCode == hotkeys['storecurrentwindowslayout']:
+        update_windows_info()
         store_window_geometries()
     elif keyCode == hotkeys['logactivewindow']:
         log_active_window(windowID_active, window_active)
-    elif keyCode == hotkeys['exit'] :
+    elif keyCode == hotkeys['exit']:
+        # On exit, make sure all windows are decorated
+        for winID in windowsInfo.keys():
+            set_window_decoration(winID, True)
         notify('exit')
         quit()
 # ----------------------------------------------------------------------------------------------------------------------
@@ -309,13 +316,14 @@ def init(configFile='~/.config/xpytile.conf'):
     :return:     window_active, window_active_parent, windowID_active
     """
     global disp, Xroot, screen
-    global windowsInfo, hotkeys
+    global windowsInfo
     global NET_ACTIVE_WINDOW, NET_WM_DESKTOP, NET_CLIENT_LIST, NET_CURRENT_DESKTOP, NET_WM_STATE_MAXIMIZED_VERT
     global NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, NET_WM_STATE_HIDDEN, NET_WORKAREA, NET_WM_NAME, NET_WM_STATE_MODAL
+    global MOTIF_WM_HINTS, ANY_PROPERTYTYPE
 
     disp = Xlib.display.Display()
-    Xroot = disp.screen().root
     screen = disp.screen()
+    Xroot = screen.root
 
     NET_ACTIVE_WINDOW = disp.get_atom('_NET_ACTIVE_WINDOW')
     NET_WM_DESKTOP = disp.get_atom('_NET_WM_DESKTOP')
@@ -328,6 +336,8 @@ def init(configFile='~/.config/xpytile.conf'):
     NET_WM_NAME = disp.get_atom('_NET_WM_NAME')
     NET_WORKAREA = disp.get_atom('_NET_WORKAREA')
     NET_WM_STATE_MODAL = disp.get_atom('_NET_WM_STATE_MODAL')
+    MOTIF_WM_HINTS = disp.get_atom('_MOTIF_WM_HINTS')
+    ANY_PROPERTYTYPE = Xlib.X.AnyPropertyType
 
     config = configparser.ConfigParser()
     config.read(os.path.expanduser(configFile))
@@ -341,12 +351,12 @@ def init(configFile='~/.config/xpytile.conf'):
 
     # determine active window and its parent
     window_active = disp.get_input_focus().focus
-    windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, Xlib.X.AnyPropertyType).value[0]
+    windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
     window_active_parent = get_parent_window(window_active)
 
     # configure event-mask
-    Xroot.change_attributes(event_mask = Xlib.X.PropertyChangeMask | Xlib.X.SubstructureNotifyMask |
-                                         Xlib.X.KeyReleaseMask)
+    Xroot.change_attributes(event_mask=Xlib.X.PropertyChangeMask | Xlib.X.SubstructureNotifyMask |
+                                       Xlib.X.KeyReleaseMask)
     notify('start')
 
     return window_active, window_active_parent, windowID_active
@@ -360,7 +370,7 @@ def init_hotkeys_info(config):
     :param   config:  parsed config-file
     :return:
     """
-    global hotkeys, disp, Xroot
+    global hotkeys, Xroot
     modifier = config['Hotkeys'].getint('modifier')
     if modifier == -1:
         modifier = Xlib.X.AnyModifier
@@ -409,6 +419,7 @@ def init_tiling_info(config):
         except ValueError:
             value = fallBackValue
         return value
+
     # ----------------------------------------------------------------------------
     def parseConfigIgnoreWindowEntry(entry):
 
@@ -436,31 +447,35 @@ def init_tiling_info(config):
                     retVal['!title'] = not r.group(4).startswith('!')
 
         return retVal
+
     # ----------------------------------------------------------------------------
 
     tilingInfo = dict()
 
     # configured settings that define ...
-    #   ... what windows should be ignored depending on their name and title
+    #   ... what windows should be ignored depending on their name and title.
     tilingInfo['ignoreWindows'] = list()
     for line in config['General']['ignoreWindows'].split('\n'):
         entry = parseConfigIgnoreWindowEntry(line)
         if entry is not None:
             tilingInfo['ignoreWindows'].append(entry)
 
-    #   ... which application should be tiled after some delay, depending on their name
+    #   ... which application should be tiled after some delay, depending on their name.
     tilingInfo['delayTilingWindowsWithNames'] = list()
     for entry in config['General']['delayTilingWindowsWithNames'].split('\n'):
         tilingInfo['delayTilingWindowsWithNames'].append(re.compile(entry[1:-1]))
 
     tilingInfo['delayTimeTiling'] = getConfigValue(config, 'General', 'delayTimeTiling', 0.5, 'float')
 
-    #   ... resize- and tiling-status for each desktop
+    #   ... resize- , tiling- and window-decoration - status for each desktop.
     tilingInfo['resizeWindows'] = _list([])
     tilingInfo['resizeWindows'].set_default(True)
 
     tilingInfo['tileWindows'] = _list([])
     tilingInfo['tileWindows'].set_default(True)
+
+    tilingInfo['windowDecoration'] = _list([])
+    tilingInfo['windowDecoration'].set_default(True)
 
     tilingInfo['tiler'] = _list([])
     tilingInfo['tiler'].set_default(getConfigValue(config, 'General', 'defaultTiler', 1))
@@ -489,7 +504,7 @@ def init_tiling_info(config):
     #   ... a minimal size, so not to shrink width or height of a window smaller than this.
     tilingInfo['minSize'] = getConfigValue(config, 'General', 'minSize', 350)
 
-    #   ... the increment when resizing the master window by hotkey
+    #   ... the increment when resizing the master window by hotkey.
     tilingInfo['stepSize'] = getConfigValue(config, 'General', 'stepSize', 50)
 
     tilingInfo['masterAndStackVertic'] = dict()
@@ -529,7 +544,7 @@ def log_active_window(windowID_active, window_active):
 
     fileName = os.path.join('/tmp', f'xpyfile_{os.environ["USER"]}.log')
     with open(fileName, 'a') as f:
-        dateStr = datetime.datetime.strftime(datetime.datetime.now(),'%x %X')
+        dateStr = datetime.datetime.strftime(datetime.datetime.now(), '%x %X')
         f.write(f'[{dateStr}]  name: {get_windows_name(windowID_active, window_active)},'
                 f'  title: {get_windows_title(window_active)}\n')
 # ----------------------------------------------------------------------------------------------------------------------
@@ -539,8 +554,8 @@ def match(compRexExList, string):
     """
     Check whether the string matches any of the regexes
 
-    :param compPatternList:  list of compiled regex-pattern
-    :param sting:            string to test
+    :param compRexExList:  list of compiled regex-pattern
+    :param string:         string to test
     :return:
     """
 
@@ -606,8 +621,8 @@ def notify(case, status=None):
     summary = notificationInfo[f'{case}_summary']
 
     try:
-        subprocess.Popen(['notify-send', '-t',  notificationInfo['time'],
-                          f'--icon={iconFilePath}',  summary,  message])
+        subprocess.Popen(['notify-send', '-t', notificationInfo['time'],
+                          f'--icon={iconFilePath}', summary, message])
     except FileNotFoundError as e:
         pass
 # ----------------------------------------------------------------------------------------------------------------------
@@ -618,10 +633,10 @@ def recreate_window_geometries():
     Re-creates the geometry of all -not minimized- windows of the current desktop
     :return:
     """
-    global tilingInfo, disp, NET_CURRENT_DESKTOP
+    global tilingInfo, disp, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
     # get a list of all -not minimized and not ignored- windows on the given desktop
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
     winIDs = get_windows_on_desktop(currentDesktop)
 
     for winID in winIDs:
@@ -637,8 +652,9 @@ def recreate_window_geometries():
             set_window_position(winID, x=x, y=y)
             set_window_size(winID, width=width, height=height)
             disp.sync()
+            update_windows_info()
         except KeyError:
-            pass   # window is not present anymore (on this desktop)
+            pass  # window is not present anymore (on this desktop)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -646,20 +662,20 @@ def resize_docked_windows(windowID_active, window_active, moved_border):
     """
     Resize the side-by-side docked windwows.
     The function deliberately retrieves the current window geometry of the active window
-    rather than using the already existing information of the  event  structure.
+    rather than using the already existing information of the event structure.
     This saves a good amount of redrawing.
 
-    :param windowID_active:  ID of the active window
+    :param windowID_active:   ID of the active window
     :param window_active:     active window
     :param moved_border:      points out which border of the active window got moved
     :return:
     """
     global disp, tilingInfo, NET_WORKAREA
-    global windowsInfo   # dict with windows and their geometries (before last resize of the active window)
+    global windowsInfo  # dict with windows and their geometries (before last resize of the active window)
 
     tolerance = 3
 
-    if moved_border not in [1, 2, 4, 8]:   # 1: left, 2: upper, 4: right, 8: lower
+    if moved_border not in [1, 2, 4, 8]:  # 1: left, 2: upper, 4: right, 8: lower
         return None
 
     winInfo_active = windowsInfo[windowID_active]
@@ -676,42 +692,44 @@ def resize_docked_windows(windowID_active, window_active, moved_border):
         if winID == windowID_active or winInfo['desktop'] != desktop:
             continue
 
-        if moved_border == 1:   # left border
+        if moved_border == 1:  # left border
             # check, whether the windows were docked,
             # before the geometry of the active window changed
             if abs(winInfo['x2'] + 1 - winInfo_active['x']) <= tilingInfo['margin'] + tolerance and \
-                                       winInfo_active['y'] <= max(winInfo['y'], 0) + tolerance and  \
-                                       winInfo_active['y2'] >= min(winInfo['y2'], workAreaHeight) - tolerance:
+                    winInfo_active['y'] <= max(winInfo['y'], 0) + tolerance and \
+                    winInfo_active['y2'] >= min(winInfo['y2'], workAreaHeight) - tolerance:
                 geometry = get_window_geometry(window_active)
-                if geometry is None:   # window vanished
+                if geometry is None:  # window vanished
                     return
                 newWidth = geometry.x - winInfo['x']
                 if newWidth >= tilingInfo['minSize']:
                     # resize, according to the new geometry of the active window
                     set_window_size(winID, width=newWidth)
                     disp.sync()
+                    # update_windows_info()
 
-        elif moved_border == 2:   # upper border
+        elif moved_border == 2:  # upper border
             # check, whether the windows were docked,
             # before the geometry of the active window  got changed
             if abs(winInfo['y2'] + 1 - winInfo_active['y']) <= tilingInfo['margin'] + tolerance and \
-                                       winInfo_active['x'] <= max(winInfo['x'], 0) + tolerance and \
-                                       winInfo_active['x2'] >= min(winInfo['x2'], workAreaWidth) - tolerance:
+                    winInfo_active['x'] <= max(winInfo['x'], 0) + tolerance and \
+                    winInfo_active['x2'] >= min(winInfo['x2'], workAreaWidth) - tolerance:
                 geometry = get_window_geometry(window_active)
-                if geometry is None:   # window vanished
+                if geometry is None:  # window vanished
                     return
                 newHeight = geometry.y - winInfo['y']
                 if newHeight >= tilingInfo['minSize']:
                     # resize, according to the new geometry of the active window
                     set_window_size(winID, height=newHeight)
                     disp.sync()
+                    # update_windows_info()
 
-        elif moved_border == 4:   # right border
+        elif moved_border == 4:  # right border
             if abs(winInfo_active['x2'] + 1 - winInfo['x']) <= tilingInfo['margin'] + tolerance and \
-                                              winInfo_active['y'] <= max(winInfo['y'], 0) + tolerance and \
-                                              winInfo_active['y2'] >= min(winInfo['y2'], workAreaHeight) - tolerance:
+                    winInfo_active['y'] <= max(winInfo['y'], 0) + tolerance and \
+                    winInfo_active['y2'] >= min(winInfo['y2'], workAreaHeight) - tolerance:
                 winActiveGeom = get_window_geometry(window_active)
-                if winActiveGeom is None:   # window vanished
+                if winActiveGeom is None:  # window vanished
                     return
                 winActive_x2 = winActiveGeom.x + winActiveGeom.width - 1
                 newWidth = winInfo['x2'] - winActive_x2
@@ -719,13 +737,14 @@ def resize_docked_windows(windowID_active, window_active, moved_border):
                     set_window_position(winID, x=winActive_x2 + 1)
                     set_window_size(winID, width=newWidth)
                     disp.sync()
+                    # update_windows_info()
 
-        elif moved_border == 8:   # lower border
+        elif moved_border == 8:  # lower border
             if abs(winInfo_active['y2'] + 1 - winInfo['y']) <= tilingInfo['margin'] + tolerance and \
-                                              winInfo_active['x'] <= max(winInfo['x'], 0) + tolerance and \
-                                              winInfo_active['x2'] >= min(winInfo['x2'], workAreaWidth) - tolerance:
+                    winInfo_active['x'] <= max(winInfo['x'], 0) + tolerance and \
+                    winInfo_active['x2'] >= min(winInfo['x2'], workAreaWidth) - tolerance:
                 winActiveGeom = get_window_geometry(window_active)
-                if winActiveGeom is None:   # window vanished
+                if winActiveGeom is None:  # window vanished
                     return
                 winActive_y2 = winActiveGeom.y + winActiveGeom.height - 1
                 newHeight = winInfo['y2'] - winActive_y2
@@ -733,6 +752,7 @@ def resize_docked_windows(windowID_active, window_active, moved_border):
                     set_window_position(winID, y=winActive_y2 + 1)
                     set_window_size(winID, height=newHeight)
                     disp.sync()
+                    # update_windows_info()
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -757,7 +777,7 @@ def set_setxy_win(winID):
 
     try:
         if windowsInfo[winID]['winSetXY'] is not None:
-            return    # already set
+            return  # already set
     except KeyError:
         return
 
@@ -779,7 +799,34 @@ def set_setxy_win(winID):
         windowsInfo[winID]['winSetXY'].configure(x=oldX, y=oldY)
         disp.sync()
     except (Xlib.error.BadWindow, AttributeError, KeyError) as e:
-        pass   # window vanished
+        pass  # window vanished
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def set_window_decoration(winID, status):
+    """
+    Undecorate / decorate the given window (title-bar and border)
+
+    :param winID:   ID of the window
+    :param status:  controls whether to show the decoration (True | False)
+    :return:
+    """
+    global windowsInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
+
+    try:
+        window = windowsInfo[winID]['win']
+        if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
+            hints = result.value
+            if hints[2] == int(status):
+                return
+            hints[2] = int(status)
+        else:
+            hints = (2, 0, int(status), 0, 0)
+        window.change_property(MOTIF_WM_HINTS, MOTIF_WM_HINTS, 32, hints)
+        set_window_position(winID, x=windowsInfo[winID]['x'], y=windowsInfo[winID]['y'])
+        set_window_size(winID, width=windowsInfo[winID]['width'], height=windowsInfo[winID]['height'])
+    except:
+        pass
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -791,8 +838,19 @@ def set_window_position(winID, **kwargs):
     :param kwargs:   x- and/or y-position
     :return:
     """
-    global windowsInfo
+    global windowsInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
 
+    # Check whether the window is undecorated, and if so, always use the window itself -i.e. not the parent window-
+    # to configure the window position
+    try:
+        window = windowsInfo[winID]['win']
+        if window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32).value[2] == 0:
+            windowsInfo[winID]['win'].configure(**kwargs)
+            return
+    except (AttributeError, KeyError) as e:
+        return  # window vanished
+
+    # Window is decorated, for some windows the parent window needs to be used  -  see function set_setxy_win()
     try:
         windowsInfo[winID]['winSetXY'].configure(**kwargs)
     except (AttributeError, KeyError) as e:
@@ -800,7 +858,7 @@ def set_window_position(winID, **kwargs):
         try:
             windowsInfo[winID]['winSetXY'].configure(**kwargs)
         except (AttributeError, KeyError) as e:
-            pass   # window vanished
+            pass  # window vanished
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -826,10 +884,10 @@ def store_window_geometries():
     Saves  the geometry of all -not minimized- windows of the current desktop
     :return:
     """
-    global tilingInfo, NET_CURRENT_DESKTOP
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
     # get a list of all -not minimized and not ignored- windows of the current desktop
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
     winIDs = get_windows_on_desktop(currentDesktop)
 
     tilingInfo['userDefinedGeom'][currentDesktop] = dict()
@@ -844,6 +902,37 @@ def store_window_geometries():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def swap_windows(winID):
+    """
+    Swap the position of window winID with the upper- / left-most window
+    :param      winID:  ID of the window which should be moved
+    :return:
+    """
+    global disp, Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
+
+    # get a list of all -not minimized and not ignored- windows of the current desktop
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    winIDs = get_windows_on_desktop(currentDesktop)
+
+    if len(winIDs) < 2:
+        return
+
+    # sort winIDs: first by y- then by x-position
+    winIDs = sorted(winIDs, key=lambda winID: (windowsInfo[winID]['y'], windowsInfo[winID]['x']))
+
+    if winID == winIDs[0]:
+        return  # selected window is the top- / left- most one
+
+    set_window_position(winID, x=windowsInfo[winIDs[0]]['x'], y=windowsInfo[winIDs[0]]['y'])
+    set_window_size(winID, width=windowsInfo[winIDs[0]]['width'], height=windowsInfo[winIDs[0]]['height'])
+    set_window_position(winIDs[0], x=windowsInfo[winID]['x'], y=windowsInfo[winID]['y'])
+    set_window_size(winIDs[0], width=windowsInfo[winID]['width'], height=windowsInfo[winID]['height'])
+
+    disp.sync()
+    update_windows_info()
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, resizeMaster=0):
     """
     Calls the currently or manually selected tiler
@@ -852,12 +941,13 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
     :param manuallyTriggered:  status, whether called automatically or manually
     :param tilerNumber:        number which tiler to set and use
     :param desktopList:        list of desktops where tiling needs to be done
+    :param resizeMaster:       number of pixels the master should be resized
     :return:
     """
-    global Xroot, NET_CURRENT_DESKTOP
+    global Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
     if desktopList is None:
-        currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+        currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
         desktopList = [currentDesktop]
 
     for desktop in desktopList:
@@ -868,7 +958,7 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
             tilingInfo['tiler'][desktop] = tilerNumber
 
         if resizeMaster != 0 and tilingInfo['tiler'][desktop] not in [1, 3]:
-            continue  #  no tiler with a master window
+            continue  # no tiler with a master window
 
         if tilingInfo['tiler'][desktop] == 1:
             tile_windows_master_and_stack_vertically(desktop, resizeMaster)
@@ -902,6 +992,7 @@ def tile_windows_horizontally(desktop):
     workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
 
     if len(winIDs) == 1:
+        set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
             set_window_position(winIDs[0], x=0, y=0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
@@ -913,14 +1004,15 @@ def tile_windows_horizontally(desktop):
     winIDs = sorted(winIDs, key=lambda winID: windowsInfo[winID]['x'])
     N = min(tilingInfo['horizontally']['maxNumWindows'], len(winIDs))
 
+    set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # check whether this window can stay as it is
     if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
             windowsInfo[winIDs[0]]['y2'] == workAreaHeight - 1 and \
-            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] < workAreaWidth - (N-1) * tilingInfo['minSize']:
+            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] < workAreaWidth - (N - 1) * tilingInfo['minSize']:
         set_window_position(winIDs[0], x=0, y=0)
         I = 1
         x = windowsInfo[winIDs[0]]['x2'] + 1
-        width = int((workAreaWidth - x) / (N-1))
+        width = int((workAreaWidth - x) / (N - 1))
     else:
         I = 0
         x = 0
@@ -932,9 +1024,14 @@ def tile_windows_horizontally(desktop):
         if i == N - 1:
             width = workAreaWidth - x + 1
         unmaximizeWindow(windowsInfo[winID]["win"])
+        set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=0)
-        set_window_size(winID, width=width, height=workAreaHeight+1)
+        set_window_size(winID, width=width, height=workAreaHeight + 1)
         x += width
+
+    # make sure that all remaining (ignored) windows are decorated
+    for winID in winIDs[N:]:
+        set_window_decoration(winID, True)
 
     disp.sync()
     update_windows_info()
@@ -943,13 +1040,14 @@ def tile_windows_horizontally(desktop):
 # ----------------------------------------------------------------------------------------------------------------------
 def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
     """
-    Tiles the -not minimized- windows of the given desktop
-    one master on the upper and a stack of windows on the lower part of the screen
+    Tiles the -not minimized- windows of the given desktop,
+    one master on the upper and a stack of windows (from left to right) on the lower part of the screen
 
-    :param desktop:     desktop
+    :param desktop:      desktop
+    :param resizeMaster  number of pixels the master window should be resized
     :return:
     """
-    global tilingInfo, disp, Xroot, NET_CURRENT_DESKTOP, NET_WORKAREA
+    global tilingInfo, disp, Xroot, NET_WORKAREA
 
     # get a list of all -not minimized and not ignored- windows of the given desktop
     winIDs = get_windows_on_desktop(desktop)
@@ -961,6 +1059,7 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
     workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
 
     if len(winIDs) == 1:
+        set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
             set_window_position(winIDs[0], x=0, y=0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
@@ -972,6 +1071,7 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
     winIDs = sorted(winIDs, key=lambda winID: windowsInfo[winID]['y'])
     winIDs[1:] = sorted(winIDs[1:], key=lambda winID: windowsInfo[winID]['x'])
 
+    set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the upper part of the screen
     if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
             windowsInfo[winIDs[0]]['x2'] == workAreaWidth - 1 and \
@@ -981,7 +1081,7 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
         height = windowsInfo[winIDs[0]]['height']
         if resizeMaster != 0:
             height += resizeMaster
-            height = max(height, tilingInfo['minSize']+2)
+            height = max(height, tilingInfo['minSize'] + 2)
             height = min(height, workAreaHeight - tilingInfo['minSize'])
             set_window_size(winIDs[0], width=workAreaWidth, height=height)
     else:
@@ -992,19 +1092,24 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
         set_window_size(winIDs[0], width=workAreaWidth, height=height)
 
     # Stack the remaining windows (max. maxNumWindows - 1) on the lower part of the screen
-    N = min(tilingInfo['masterAndStackVertic']['maxNumWindows']-1, len(winIDs) - 1)
+    N = min(tilingInfo['masterAndStackVertic']['maxNumWindows'] - 1, len(winIDs) - 1)
     x = 0
     y = height
     height = workAreaHeight - height
     width = int(workAreaWidth / N)
 
-    for i, winID in enumerate(winIDs[1:N+1]):
+    for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
             width = workAreaWidth - x + 1
         unmaximizeWindow(windowsInfo[winID]["win"])
+        set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
         x += width
+
+    # make sure that all remaining (ignored) windows are decorated
+    for winID in winIDs[N + 1:]:
+        set_window_decoration(winID, True)
 
     disp.sync()
     update_windows_info()
@@ -1013,13 +1118,14 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
 # ----------------------------------------------------------------------------------------------------------------------
 def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
     """
-    Tiles the -not minimized- windows of the given desktop
-    one master on the left and a stack of windows on the right
+    Tiles the -not minimized- windows of the given desktop,
+    one master on the left and a stack of windows on the right (from top to bottom)
 
-    :param desktop:     desktop
+    :param desktop:       desktop
+    :param resizeMaster:  number of pixels the master window should be resized
     :return:
     """
-    global tilingInfo, disp, Xroot, NET_CURRENT_DESKTOP, NET_WORKAREA
+    global tilingInfo, disp, Xroot, NET_WORKAREA
 
     # get a list of all -not minimized and not ignored- windows of the current desktop
     winIDs = get_windows_on_desktop(desktop)
@@ -1031,6 +1137,7 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
     workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
 
     if len(winIDs) == 1:
+        set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
             set_window_position(winIDs[0], x=0, y=0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
@@ -1042,6 +1149,7 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
     winIDs = sorted(winIDs, key=lambda winID: windowsInfo[winID]['x'])
     winIDs[1:] = sorted(winIDs[1:], key=lambda winID: windowsInfo[winID]['y'])
 
+    set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the left side of the screen
     if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
             windowsInfo[winIDs[0]]['y2'] == workAreaHeight - 1 and \
@@ -1051,30 +1159,35 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
         width = windowsInfo[winIDs[0]]['width']
         if resizeMaster != 0:
             width += resizeMaster
-            width = max(width, tilingInfo['minSize']+2)
+            width = max(width, tilingInfo['minSize'] + 2)
             width = min(width, workAreaWidth - tilingInfo['minSize'])
             set_window_size(winIDs[0], width=width, height=workAreaHeight)
     else:
         # the window needs to be repositioned
-        unmaximizeWindow(windowsInfo[winIDs[0]]["win"])
+        unmaximizeWindow(windowsInfo[winIDs[0]]['win'])
         width = int(workAreaWidth * tilingInfo['masterAndStackVertic']['defaultWidthMaster']) + resizeMaster
         set_window_position(winIDs[0], x=0, y=0)
         set_window_size(winIDs[0], width=width, height=workAreaHeight)
 
-    # Stack the remaining windows (max. maxNumWindows - 1) on the right half of the screen
-    N = min(tilingInfo['masterAndStackVertic']['maxNumWindows']-1, len(winIDs) - 1)
+    # Stack the remaining windows (max. maxNumWindows - 1) on the right part of the screen
+    N = min(tilingInfo['masterAndStackVertic']['maxNumWindows'] - 1, len(winIDs) - 1)
     x = width
     y = 0
     width = workAreaWidth - width
     height = int(workAreaHeight / N)
 
-    for i, winID in enumerate(winIDs[1:N+1]):
+    for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
             height = workAreaHeight - y + 1
         unmaximizeWindow(windowsInfo[winID]["win"])
+        set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
         y += height
+
+    # make sure that all remaining (ignored) windows are decorated
+    for winID in winIDs[N + 1:]:
+        set_window_decoration(winID, True)
 
     disp.sync()
     update_windows_info()
@@ -1085,17 +1198,18 @@ def tile_windows_maximize(desktop, winID=None):
     """
     This 'tiler' just maximizes the active window
 
-    :param desktop:    desktop
+    :param desktop:    desktop (given for possible future use)
     :param winID:      ID of the window, if None: retrieve ID of active window
     :return:
     """
-    global Xroot, disp, NET_WM_STATE_MAXIMIZED_VERT, NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE
+    global Xroot, disp, NET_WM_STATE_MAXIMIZED_VERT, NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, ANY_PROPERTYTYPE
 
     # geometry of work area (screen without taskbar)
     workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
 
     if winID is None:
-        winID = Xroot.get_full_property(NET_ACTIVE_WINDOW, Xlib.X.AnyPropertyType).value[0]
+        winID = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
+    set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
     set_window_position(winID, x=0, y=0)
     set_window_size(winID, width=workAreaWidth, height=workAreaHeight)
 
@@ -1129,6 +1243,7 @@ def tile_windows_vertically(desktop):
     workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
 
     if len(winIDs) == 1:
+        set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
             set_window_position(winIDs[0], x=0, y=0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
@@ -1147,12 +1262,33 @@ def tile_windows_vertically(desktop):
         if i == N - 1:
             height = workAreaHeight - y + 1
         unmaximizeWindow(windowsInfo[winID]['win'])
+        set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=0, y=y)
         set_window_size(winID, width=workAreaWidth, height=height)
         y += height
 
+    # make sure that all remaining (ignored) windows are decorated
+    for winID in winIDs[N:]:
+        set_window_decoration(winID, True)
+
     disp.sync()
     update_windows_info()
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def toggle_window_decoration():
+    """
+    Toggles whether tiled windows on the current desktop should be decorated.
+    The remaining, ignored windows are always (re-)decorated.
+    :return:
+    """
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
+
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    if tilingInfo['tileWindows'][currentDesktop]:
+        tilingInfo['windowDecoration'][currentDesktop] = not tilingInfo['windowDecoration'][currentDesktop]
+    else:
+        notify('infoTilingMustBeOn')
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1161,10 +1297,11 @@ def toggle_maximize_when_one_window():
     Toggles whether a tiling should maximize a window when it's the only one on the current desktop
     :return:
     """
-    global tilingInfo, NET_CURRENT_DESKTOP
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
-    tilingInfo['maximizeWhenOneWindowLeft'][currentDesktop] = not tilingInfo['maximizeWhenOneWindowLeft'][currentDesktop]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    tilingInfo['maximizeWhenOneWindowLeft'][currentDesktop] = \
+        not tilingInfo['maximizeWhenOneWindowLeft'][currentDesktop]
 
     notify('maximizeWhenOneWindowLeft', tilingInfo["maximizeWhenOneWindowLeft"][currentDesktop])
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1175,9 +1312,9 @@ def toggle_resize():
     Toggles whether resizing of docked windows is active for the current desktop
     :return:
     """
-    global tilingInfo, NET_CURRENT_DESKTOP
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
     tilingInfo['resizeWindows'][currentDesktop] = not tilingInfo['resizeWindows'][currentDesktop]
 
     notify('resizing', tilingInfo["resizeWindows"][currentDesktop])
@@ -1190,9 +1327,9 @@ def toggle_tiling():
 
     :return: new tiling state of the current desktop [True | False]
     """
-    global tilingInfo, NET_CURRENT_DESKTOP
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
     tilingInfo['tileWindows'][currentDesktop] = not tilingInfo['tileWindows'][currentDesktop]
 
     notify('tiling', tilingInfo["tileWindows"][currentDesktop])
@@ -1229,10 +1366,10 @@ def update_windows_info():
     :return: status           whether the number of windows has changed,  and
              desktopList      list of desktops, when a window got moved from one desktop to another
     """
-    global NET_CLIENT_LIST, NET_WM_DESKTOP, NET_WM_STATE_MODAL, Xroot, disp
+    global NET_CLIENT_LIST, NET_WM_DESKTOP, NET_WM_STATE_MODAL, ANY_PROPERTYTYPE, Xroot, disp
     global tilingInfo, windowsInfo, verbosityLevel
 
-    windowIDs = Xroot.get_full_property(NET_CLIENT_LIST, Xlib.X.AnyPropertyType).value
+    windowIDs = Xroot.get_full_property(NET_CLIENT_LIST, ANY_PROPERTYTYPE).value
     numWindowsChanged = False
     doDelay = False
     desktopList = list()
@@ -1243,23 +1380,26 @@ def update_windows_info():
             del windowsInfo[winID]
             numWindowsChanged = True
 
-    # add new windows and update the geometry of existing windows
+    # update the geometry of existing windows and add new windows
     for winID in windowIDs:
         try:
-            win = disp.create_resource_object('window', winID)
-            if NET_WM_STATE_MODAL in win.get_full_property(NET_WM_STATE, 0).value.tolist():
-                if verbosityLevel > 1:
-                    title = get_windows_title(win)
-                    winClass, name = win.get_wm_class()
-                    print('Ignoring modal window:\t'
-                          f'name: "{name}"\ttitle: "{title}"')
-                continue   #  ignore modal window (dialog box)
-            title = get_windows_title(win)
-            winClass, name = win.get_wm_class()
-            if winID in windowsInfo or not match_ignore(tilingInfo['ignoreWindows'], name, title):
-                desktop = win.get_full_property(NET_WM_DESKTOP, Xlib.X.AnyPropertyType).value[0]
+            try:
+                win = windowsInfo[winID]['win']
+            except KeyError:
+                win = disp.create_resource_object('window', winID)
+                if NET_WM_STATE_MODAL in win.get_full_property(NET_WM_STATE, 0).value.tolist():
+                    if verbosityLevel > 1:
+                        title = get_windows_title(win)
+                        winClass, name = win.get_wm_class()
+                        print('Ignoring modal window:\t'
+                              f'name: "{name}"\ttitle: "{title}"')
+                    continue  # ignore modal window (dialog box)
+            if winID in windowsInfo.keys() or not match_ignore(tilingInfo['ignoreWindows'],
+                                                        (name := win.get_wm_class()[1]),
+                                                        get_windows_title(win)):
+                desktop = win.get_full_property(NET_WM_DESKTOP, ANY_PROPERTYTYPE).value[0]
                 geometry = get_window_geometry(win)
-                if geometry is None:   # window vanished
+                if geometry is None:  # window vanished
                     continue
                 if winID not in windowsInfo:
                     windowsInfo[winID] = dict()
@@ -1269,11 +1409,11 @@ def update_windows_info():
                     windowsInfo[winID]['winSetXY'] = None
                     numWindowsChanged = True
                     if match(tilingInfo['delayTilingWindowsWithNames'], name):
-                        doDelay = True                                     # An app, that needs some delay, got launched
+                        doDelay = True  # An app, that needs some delay, got launched
                 try:
                     if windowsInfo[winID]['desktop'] != desktop:
-                        numWindowsChanged = True                           # Window was moved to another desktop
-                        desktopList.append(desktop)                        # Tiling (if activated) needs to be done
+                        numWindowsChanged = True  # Window was moved to another desktop
+                        desktopList.append(desktop)  # Tiling (if activated) needs to be done
                         desktopList.append(windowsInfo[winID]['desktop'])  # on both desktops
                 except KeyError:
                     pass
@@ -1285,7 +1425,7 @@ def update_windows_info():
                 windowsInfo[winID]['x2'] = geometry.x + geometry.width - 1
                 windowsInfo[winID]['y2'] = geometry.y + geometry.height - 1
         except:
-            pass   # window has vanished
+            pass  # window has vanished
 
     if doDelay:
         time.sleep(tilingInfo['delayTimeTiling'])
@@ -1305,14 +1445,20 @@ def run(window_active, window_active_parent, windowID_active):
     :return:
     """
     global disp, Xroot, NET_ACTIVE_WINDOW, NET_WM_DESKTOP, windowsInfo, tilingInfo, verbosityLevel
+    global ANY_PROPERTYTYPE
+
+    PROPERTY_NOTIFY = Xlib.X.PropertyNotify
+    CONFIGURE_NOTIFY = Xlib.X.ConfigureNotify
+    KEY_RELEASE = Xlib.X.KeyRelease
 
     tile_windows()
     while True:
         event = disp.next_event()  # sleep until an event occurs
-        if event.type == Xlib.X.PropertyNotify  and  event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
+
+        if event.type == PROPERTY_NOTIFY and event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
             # the active window or the desktop has changed
             numWindowsChanged, desktopList = update_windows_info()
-            windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, Xlib.X.AnyPropertyType).value[0]
+            windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
             window_active = disp.create_resource_object('window', windowID_active)
             window_active_parent = get_parent_window(window_active)
 
@@ -1340,15 +1486,14 @@ def run(window_active, window_active_parent, windowID_active):
                         tile_windows(False, 0)  # maximize active window
                 except:
                     pass
-        elif event.type == Xlib.X.ConfigureNotify  and  event.window == window_active_parent:
+        elif event.type == CONFIGURE_NOTIFY and event.window == window_active_parent:
             moved_border = get_moved_border(windowID_active, window_active)
             if moved_border:
                 resize_docked_windows(windowID_active, window_active, moved_border)
-                update_windows_info()
-        elif event.type == Xlib.X.KeyRelease:
+            update_windows_info()
+        elif event.type == KEY_RELEASE:
             handle_key_event(event.detail, windowID_active, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
-
 
 if __name__ == '__main__':
     configFile = 'xpytilerc'
@@ -1357,7 +1502,6 @@ if __name__ == '__main__':
         configFilePath = os.path.join(configPath, configFile)
     else:
         configFilePath = os.path.join('~/.config/', configFile)
-
 
     global verbosityLevel
     parser = argparse.ArgumentParser(prog='xpytile.py')
@@ -1393,6 +1537,7 @@ if __name__ == '__main__':
     except:
         # Something went wrong, write traceback info in /tmp
         import traceback
+
         exc_type, exc_value, exc_traceback = sys.exc_info()
         exception_message = traceback.format_exception(exc_type, exc_value, exc_traceback)
         fileName = os.path.join('/tmp', f'xpytile_crash_{os.environ["USER"]}.log')
