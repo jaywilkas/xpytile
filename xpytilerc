@@ -28,7 +28,7 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Doublecmd" !title: "^Double Commander "
                 name: "jetbrains-pycharm" title: "(Confirm|Tip(p){0,1}|Settings)"
 
-                
+
 # Delay the auto-tiling when a new application was lauched and its name
 # matches one of these regexes.
 # For example LibreOffice needs some delay time.
@@ -73,7 +73,7 @@ stepSize = 50
 Desktop1 = 1
 Desktop2 = 1
 Desktop3 = 1
-Desktop4 = 5
+Desktop4 = 1
 
 
 
@@ -148,31 +148,40 @@ maximizeWhenOneWindowLeft = True
 # -1: any modifier
 modifier = 64
 
-# toggle status for the current desktop
+# toggle the status of the current desktop
 # whether to simultaneously resize docked windows
 # 24: "q"
 toggleResize = 24
 
-# toggle status for the current desktop
+# toggle the status of the current desktop
 # whether tiling is active
 # 25: "w"
 toggleTiling = 25
 
-# toggle status for the current desktop
+# toggle the status of the current desktop
 # whether to simultaneously resize docked windows
 # and whether tiling is active
 # 26: "e"
 toggleResizeAndTiling = 26
 
-# toggle status for the current desktop
+# toggle the status of the current desktop
 # whether to maximize the last window
 # when the 2nd last window got closed
 # 27: "r"
 toggleMaximizeWhenOneWindowLeft = 27
 
+# toggle the status of the current desktop
+# whether to decorate the tiled windows
+# 52: "y"
+toggleDecoration = 52
+
 # cycle all -not minimized- windows on the current desktop
 # 49: ^
 cycleWindows = 49
+
+# swap active window with the top most- / left- one
+# 9: ESC
+swapWindows = 9
 
 # store the layout of the windows on the current desktop
 # 15: "6"
@@ -234,6 +243,10 @@ time = 2500
 # Notification summary, message  and icons
 on_Message = +++ ON +++
 off_Message = \-\-  off  \-\-
+
+infoTilingMustBeOn_Message = Tiling must be on
+infoTilingMustBeOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/dialog-information.png
+infoTilingMustBeOn_Summary = Info
 
 tilingOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
 tilingOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
