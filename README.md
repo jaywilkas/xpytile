@@ -29,23 +29,23 @@ Pure Python, easily hackable
 
 # Hotkeys
 Hotkeys can be defined in the config-file.
-Most important hotkeys (full set see config-file):
-```Super_L - 1```   tiler - master and stack vertically
-```Super_L - 2```   tiler - vertically
-```Super_L - 3```   tiler - master and stack horizontally
-```Super_L - 4```   tiler - horizontally
-```Super_L - 0```   tiler - maximize
-```Super_L - 5```   restore windows layout
-```Super_L - 6```   store windows layout
-```Super_L - ^```   cycle windows
-```Super_L - ESC``` swap current window with top/left-most window
-```Super_L - q```   toggle simultaneous resizing (on/off)
-```Super_L - w```   toggle tiling (on/off)
-```Super_L - y```   toggle window-decoration (on/off) of tiled windows
-```Super_L - a```   shrink width/height of master window and (re-)tile
-```Super_L - s```   enlarge width/height of master window and (re-)tile
-```Super_L - .```   log name & tile of active window in /tmp/xpytile_<USERNAME>.log
-```Super_L - -```   exit
+Most important hotkeys (full set see config-file):  
+```Super_L - 1``` &nbsp; &nbsp; tiler - master and stack vertically  
+```Super_L - 2``` &nbsp; &nbsp; tiler - vertically  
+```Super_L - 3``` &nbsp; &nbsp; tiler - master and stack horizontally  
+```Super_L - 4``` &nbsp; &nbsp; tiler - horizontally  
+```Super_L - 0``` &nbsp; &nbsp; tiler - maximize  
+```Super_L - 5``` &nbsp; &nbsp; restore windows layout  
+```Super_L - 6``` &nbsp; &nbsp; store windows layout  
+```Super_L - ^``` &nbsp; &nbsp; cycle windows  
+```Super_L - ESC``` swap current window with top/left-most window  
+```Super_L - q``` &nbsp; &nbsp; toggle simultaneous resizing (on/off)  
+```Super_L - w``` &nbsp; &nbsp; toggle tiling (on/off)  
+```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows  
+```Super_L - a``` &nbsp; &nbsp; shrink width/height of master window and (re-)tile  
+```Super_L - s``` &nbsp; &nbsp; enlarge width/height of master window and (re-)tile  
+```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in /tmp/xpytile_<USERNAME>.log  
+```Super_L - -``` &nbsp; &nbsp; exit  
 
 
 # Configuration
