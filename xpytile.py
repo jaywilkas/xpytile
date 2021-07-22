@@ -250,7 +250,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
     :param window_active:    active window
     :return:
     """
-    global hotkeys, tilingInfo, windowsInfo
+    global hotkeys, tilingInfo, windowsInfo, disp
 
     if keyCode == hotkeys['toggleresize']:
         toggle_resize()
@@ -304,6 +304,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
         # On exit, make sure all windows are decorated
         for winID in windowsInfo.keys():
             set_window_decoration(winID, True)
+        disp.sync()
         notify('exit')
         quit()
 # ----------------------------------------------------------------------------------------------------------------------
