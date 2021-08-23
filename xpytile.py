@@ -74,7 +74,6 @@ class _list(object):
         return str(self._list)
 # ----------------------------------------------------------------------------------------------------------------------
 
-
 # ----------------------------------------------------------------------------------------------------------------------
 def cycle_windows():
     """
@@ -204,14 +203,14 @@ def get_windows_on_desktop(desktop):
     :param  desktop:   number of desktop
     :return:           list of window-IDs
     """
-    global windowsInfo, NET_WM_STATE_HIDDEN
+    global windowsInfo, NET_WM_STATE_HIDDEN, NET_WM_STATE_STICKY
 
     winIDs = list()
     for winID, winInfo in windowsInfo.items():
         try:
             if winInfo['desktop'] == desktop:
                 propertyList = windowsInfo[winID]['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
-                if NET_WM_STATE_HIDDEN not in propertyList:
+                if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList:
                     winIDs.append(winID)
         except Xlib.error.BadWindow:
             pass  # window vanished
@@ -245,7 +244,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
     """
     Perform the action associated with the hotkey
 
-    :param keyCode: The code of the pressed (to be precise: released) hotkey
+    :param keyCode:          The code of the pressed (to be precise: released) hotkey
     :param windowID_active:  ID of active window
     :param window_active:    active window
     :return:
@@ -265,7 +264,6 @@ def handle_key_event(keyCode, windowID_active, window_active):
             tile_windows()
     elif keyCode == hotkeys['toggledecoration']:
         toggle_window_decoration()
-        tile_windows()
     elif keyCode == hotkeys['enlargemaster']:
         tile_windows(resizeMaster=tilingInfo['stepSize'])
     elif keyCode == hotkeys['shrinkmaster']:
@@ -302,7 +300,8 @@ def handle_key_event(keyCode, windowID_active, window_active):
         log_active_window(windowID_active, window_active)
     elif keyCode == hotkeys['exit']:
         # On exit, make sure all windows are decorated
-        for winID in windowsInfo.keys():
+        update_windows_info()
+        for winID in windowsInfo:
             set_window_decoration(winID, True)
         disp.sync()
         notify('exit')
@@ -320,7 +319,7 @@ def init(configFile='~/.config/xpytile.conf'):
     global windowsInfo
     global NET_ACTIVE_WINDOW, NET_WM_DESKTOP, NET_CLIENT_LIST, NET_CURRENT_DESKTOP, NET_WM_STATE_MAXIMIZED_VERT
     global NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, NET_WM_STATE_HIDDEN, NET_WORKAREA, NET_WM_NAME, NET_WM_STATE_MODAL
-    global MOTIF_WM_HINTS, ANY_PROPERTYTYPE
+    global NET_WM_STATE_STICKY, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
 
     disp = Xlib.display.Display()
     screen = disp.screen()
@@ -337,6 +336,7 @@ def init(configFile='~/.config/xpytile.conf'):
     NET_WM_NAME = disp.get_atom('_NET_WM_NAME')
     NET_WORKAREA = disp.get_atom('_NET_WORKAREA')
     NET_WM_STATE_MODAL = disp.get_atom('_NET_WM_STATE_MODAL')
+    NET_WM_STATE_STICKY = disp.get_atom('_NET_WM_STATE_STICKY')
     MOTIF_WM_HINTS = disp.get_atom('_MOTIF_WM_HINTS')
     ANY_PROPERTYTYPE = Xlib.X.AnyPropertyType
 
@@ -372,6 +372,7 @@ def init_hotkeys_info(config):
     :return:
     """
     global hotkeys, Xroot
+
     modifier = config['Hotkeys'].getint('modifier')
     if modifier == -1:
         modifier = Xlib.X.AnyModifier
@@ -1068,9 +1069,8 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
             update_windows_info()
         return
 
-    # sort winIDs: first by y- then -beginning with the second-  by x-position
-    winIDs = sorted(winIDs, key=lambda winID: windowsInfo[winID]['y'])
-    winIDs[1:] = sorted(winIDs[1:], key=lambda winID: windowsInfo[winID]['x'])
+    # sort winIDs: first by y- then by x-position
+    winIDs = sorted(winIDs, key=lambda winID: (windowsInfo[winID]['y'], windowsInfo[winID]['x']))
 
     set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the upper part of the screen
@@ -1085,6 +1085,10 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
             height = max(height, tilingInfo['minSize'] + 2)
             height = min(height, workAreaHeight - tilingInfo['minSize'])
             set_window_size(winIDs[0], width=workAreaWidth, height=height)
+            resize_docked_windows(winIDs[0], windowsInfo[winIDs[0]]['win'], 8)
+            disp.sync()
+            update_windows_info()
+            return
     else:
         # the window needs to be repositioned
         unmaximizeWindow(windowsInfo[winIDs[0]]["win"])
@@ -1146,9 +1150,8 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
             update_windows_info()
         return
 
-    # sort winIDs: first by x- then -beginning with the second-  by y-position
-    winIDs = sorted(winIDs, key=lambda winID: windowsInfo[winID]['x'])
-    winIDs[1:] = sorted(winIDs[1:], key=lambda winID: windowsInfo[winID]['y'])
+    # sort winIDs: first by x- then by y-position
+    winIDs = sorted(winIDs, key=lambda winID: (windowsInfo[winID]['x'], windowsInfo[winID]['y']))
 
     set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the left side of the screen
@@ -1163,6 +1166,10 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
             width = max(width, tilingInfo['minSize'] + 2)
             width = min(width, workAreaWidth - tilingInfo['minSize'])
             set_window_size(winIDs[0], width=width, height=workAreaHeight)
+            resize_docked_windows(winIDs[0], windowsInfo[winIDs[0]]['win'], 4)
+            disp.sync()
+            update_windows_info()
+            return
     else:
         # the window needs to be repositioned
         unmaximizeWindow(windowsInfo[winIDs[0]]['win'])
@@ -1277,22 +1284,6 @@ def tile_windows_vertically(desktop):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def toggle_window_decoration():
-    """
-    Toggles whether tiled windows on the current desktop should be decorated.
-    The remaining, ignored windows are always (re-)decorated.
-    :return:
-    """
-    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
-
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
-    if tilingInfo['tileWindows'][currentDesktop]:
-        tilingInfo['windowDecoration'][currentDesktop] = not tilingInfo['windowDecoration'][currentDesktop]
-    else:
-        notify('infoTilingMustBeOn')
-# ----------------------------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------------------------
 def toggle_maximize_when_one_window():
     """
     Toggles whether a tiling should maximize a window when it's the only one on the current desktop
@@ -1338,6 +1329,24 @@ def toggle_tiling():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def toggle_window_decoration():
+    """
+    Toggles whether tiled windows on the current desktop should be decorated.
+    The remaining, ignored windows are always (re-)decorated.
+    :return:
+    """
+    global tilingInfo, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
+
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    status = tilingInfo['windowDecoration'][currentDesktop] = not tilingInfo['windowDecoration'][currentDesktop]
+    update_windows_info()
+    for winID in windowsInfo:
+        if windowsInfo[winID]['desktop'] == currentDesktop:
+            set_window_decoration(winID, status)
+    disp.sync()
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def unmaximizeWindow(window):
     """
     Un-maximize the given window
@@ -1367,7 +1376,7 @@ def update_windows_info():
     :return: status           whether the number of windows has changed,  and
              desktopList      list of desktops, when a window got moved from one desktop to another
     """
-    global NET_CLIENT_LIST, NET_WM_DESKTOP, NET_WM_STATE_MODAL, ANY_PROPERTYTYPE, Xroot, disp
+    global NET_CLIENT_LIST, NET_WM_DESKTOP, NET_WM_STATE_MODAL, NET_WM_STATE_STICKY, ANY_PROPERTYTYPE, Xroot, disp
     global tilingInfo, windowsInfo, verbosityLevel
 
     windowIDs = Xroot.get_full_property(NET_CLIENT_LIST, ANY_PROPERTYTYPE).value
@@ -1388,14 +1397,24 @@ def update_windows_info():
                 win = windowsInfo[winID]['win']
             except KeyError:
                 win = disp.create_resource_object('window', winID)
-                if NET_WM_STATE_MODAL in win.get_full_property(NET_WM_STATE, 0).value.tolist():
-                    if verbosityLevel > 1:
-                        title = get_windows_title(win)
-                        winClass, name = win.get_wm_class()
-                        print('Ignoring modal window:\t'
-                              f'name: "{name}"\ttitle: "{title}"')
-                    continue  # ignore modal window (dialog box)
-            if winID in windowsInfo.keys() or not match_ignore(tilingInfo['ignoreWindows'],
+
+            if NET_WM_STATE_MODAL in win.get_full_property(NET_WM_STATE, 0).value.tolist():
+                if verbosityLevel > 1:
+                    title = get_windows_title(win)
+                    winClass, name = win.get_wm_class()
+                    print('Ignoring modal window:\t'
+                          f'name: "{name}"\ttitle: "{title}"')
+                continue  # ignore modal window (dialog box)
+
+            if NET_WM_STATE_STICKY in win.get_full_property(NET_WM_STATE, 0).value.tolist():
+                if verbosityLevel > 1:
+                    title = get_windows_title(win)
+                    winClass, name = win.get_wm_class()
+                    print('Ignoring sticky window:\t'
+                          f'name: "{name}"\ttitle: "{title}"')
+                continue  # ignore sticky window (visible on all workspaces)
+
+            if winID in windowsInfo or not match_ignore(tilingInfo['ignoreWindows'],
                                                         (name := win.get_wm_class()[1]),
                                                         get_windows_title(win)):
                 desktop = win.get_full_property(NET_WM_DESKTOP, ANY_PROPERTYTYPE).value[0]
@@ -1446,7 +1465,7 @@ def run(window_active, window_active_parent, windowID_active):
     :return:
     """
     global disp, Xroot, NET_ACTIVE_WINDOW, NET_WM_DESKTOP, windowsInfo, tilingInfo, verbosityLevel
-    global ANY_PROPERTYTYPE
+    global ANY_PROPERTYTYPE, NET_CURRENT_DESKTOP
 
     PROPERTY_NOTIFY = Xlib.X.PropertyNotify
     CONFIGURE_NOTIFY = Xlib.X.ConfigureNotify
@@ -1482,7 +1501,7 @@ def run(window_active, window_active_parent, windowID_active):
                 # but another window is active.  So if the maximize-'tiler'
                 # is in action, the active window must be maximized.
                 try:
-                    currentDesktop = windowsInfo[windowID_active]['desktop']
+                    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]  # windowsInfo[windowID_active]['desktop']
                     if tilingInfo['tiler'][currentDesktop] == 5:
                         tile_windows(False, 0)  # maximize active window
                 except:
