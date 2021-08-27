@@ -74,12 +74,12 @@ I'm currently not aware of a bug.
 When the program crashes, it writes traceback info in /tmp/xpytile_<USERNAME>.log
 
 # Questions
-*(Q)* Are gaps supported?
+*(Q)* Are gaps supported?  
 *(A)* Nope
   
-*(Q)* Does xpytile support multiple monitor setups?
+*(Q)* Does xpytile support multiple monitor setups?  
 *(A)* On workspaces that span multiple monitors, simultaneous resizing works fine, tiling not really.
 
-*(Q)* How do I get the exact name and title of a window I want xpytile to ignore?
+*(Q)* How do I get the exact name and title of a window I want xpytile to ignore?  
 *(A)* Run xpyile with -v (or -vv)  or use the hotkey to log name and title of the current window.
 
