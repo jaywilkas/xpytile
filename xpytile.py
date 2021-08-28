@@ -309,7 +309,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def init(configFile='~/.config/xpytile.conf'):
+def init(configFile='~/.config/xpytilerc'):
     """
     Initialization
     configFile:  file-path of the config-file
