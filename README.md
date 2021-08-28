@@ -44,7 +44,7 @@ Most important hotkeys (full set see config-file):
 ```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows  
 ```Super_L - a``` &nbsp; &nbsp; shrink width/height of master window and (re-)tile  
 ```Super_L - s``` &nbsp; &nbsp; enlarge width/height of master window and (re-)tile  
-```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in /tmp/xpytile_<USERNAME>.log  
+```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in /tmp/xpytile_&lt;USERNAME&gt;.log  
 ```Super_L - -``` &nbsp; &nbsp; exit  
 
 
@@ -71,7 +71,7 @@ python3, python-xlib
 
 # Bugs
 I'm currently not aware of a bug.
-When the program crashes, it writes traceback info in /tmp/xpytile_<USERNAME>.log
+When the program crashes, it writes traceback info in /tmp/xpytile_&lt;USERNAME&gt;.log
 
 # Questions
 *(Q)* Are gaps supported?  
