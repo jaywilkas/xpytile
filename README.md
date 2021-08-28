@@ -44,7 +44,7 @@ Most important hotkeys _(full set see config-file)_:
 ```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows  
 ```Super_L - a``` &nbsp; &nbsp; shrink width/height of master window  
 ```Super_L - s``` &nbsp; &nbsp; enlarge width/height of master window  
-```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in /tmp/xpytile_&lt;USERNAME&gt;.log  
+```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in /tmp/xpytile_<USERNAME>.log  
 ```Super_L - -``` &nbsp; &nbsp; exit  
 
 
