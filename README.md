@@ -71,7 +71,7 @@ python3, python-xlib
 
 # Bugs
 I'm currently not aware of a bug.
-When the program crashes, it writes traceback info in /tmp/xpytile_&lt;USERNAME&gt;.log
+When the program crashes, it writes traceback info in ```/tmp/xpytile_&lt;USERNAME&gt;.log```
 
 # Questions
 *(Q)* Are gaps supported?  
