@@ -26,6 +26,7 @@ import time
 import datetime
 import sys
 import os
+import shutil
 import Xlib.display, Xlib.XK, Xlib.error, Xlib.protocol
 import subprocess
 import socket
@@ -937,7 +938,7 @@ def swap_windows(winID):
 # ----------------------------------------------------------------------------------------------------------------------
 def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, resizeMaster=0):
     """
-    Calls the currently or manually selected tiler
+    Calls the current or manually selected tiler
     for the current desktop, or -if given- for the desktops in desktopList
 
     :param manuallyTriggered:  status, whether called automatically or manually
@@ -977,7 +978,7 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
 # ----------------------------------------------------------------------------------------------------------------------
 def tile_windows_horizontally(desktop):
     """
-    Stacks the -not minimized- windows of the give desktop horizontally, from left to right
+    Stacks the -not minimized- windows of the given desktop horizontally, from left to right
 
     :param desktop:     desktop
     :return:
@@ -1371,7 +1372,7 @@ def unmaximizeWindow(window):
 def update_windows_info():
     """
     Update the dictionary containing all windows, parent-windows, names, desktop-number and geometry.
-    Windows with names / titles that match the ignore-list and modal windows are not taken into account.
+    Windows with names / titles that match the ignore-list and modal and sticky windows are not taken into account.
 
     :return: status           whether the number of windows has changed,  and
              desktopList      list of desktops, when a window got moved from one desktop to another
@@ -1454,6 +1455,22 @@ def update_windows_info():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def writeCrashLog():
+    """
+    Writes, respectively appends trace-back information into /tmp/xpytile_<USER>.log
+    :return:
+    """
+
+    import traceback
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    exception_message = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    fileName = os.path.join('/tmp', f'xpytile_crash_{os.environ["USER"]}.log')
+    with open(fileName, 'a') as f:
+        dateStr = datetime.datetime.strftime(datetime.datetime.now(), '%x %X')
+        f.write(f'[{dateStr}] {exception_message}\n')
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def run(window_active, window_active_parent, windowID_active):
     """
     Waits for events (change of active window, hotkeys)
@@ -1501,7 +1518,7 @@ def run(window_active, window_active_parent, windowID_active):
                 # but another window is active.  So if the maximize-'tiler'
                 # is in action, the active window must be maximized.
                 try:
-                    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]  # windowsInfo[windowID_active]['desktop']
+                    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
                     if tilingInfo['tiler'][currentDesktop] == 5:
                         tile_windows(False, 0)  # maximize active window
                 except:
@@ -1515,6 +1532,7 @@ def run(window_active, window_active_parent, windowID_active):
             handle_key_event(event.detail, windowID_active, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
 
+
 if __name__ == '__main__':
     configFile = 'xpytilerc'
     configPath = os.getenv('XDG_CONFIG_HOME')
@@ -1522,6 +1540,14 @@ if __name__ == '__main__':
         configFilePath = os.path.join(configPath, configFile)
     else:
         configFilePath = os.path.join('~/.config/', configFile)
+
+    # If there is no user-specific config-file, try to copy it from /etc
+    if not os.path.exists(os.path.expanduser(configFilePath)):
+        try:
+            shutil.copyfile('/etc/xpytilerc', os.path.expanduser(configFilePath))
+        except:
+            writeCrashLog()
+            raise SystemExit('No config-file found')
 
     global verbosityLevel
     parser = argparse.ArgumentParser(prog='xpytile.py')
@@ -1553,14 +1579,7 @@ if __name__ == '__main__':
         # Run: wait for events and handle them
         run(window_active, window_active_parent, windowID_active)
     except KeyboardInterrupt:
-        quit()
+        raise SystemExit(' terminated by ctrl-c')
     except:
         # Something went wrong, write traceback info in /tmp
-        import traceback
-
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        exception_message = traceback.format_exception(exc_type, exc_value, exc_traceback)
-        fileName = os.path.join('/tmp', f'xpytile_crash_{os.environ["USER"]}.log')
-        with open(fileName, 'a') as f:
-            dateStr = datetime.datetime.strftime(datetime.datetime.now(), '%x %X')
-            f.write(f'[{dateStr}] {exception_message}\n')
+        writeCrashLog()
