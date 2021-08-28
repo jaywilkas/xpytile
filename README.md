@@ -29,7 +29,7 @@ Pure Python, easily hackable
 
 # Hotkeys
 Hotkeys can be defined in the config-file.
-Most important hotkeys (full set see config-file):  
+Most important hotkeys _(full set see config-file)_:  
 ```Super_L - 1``` &nbsp; &nbsp; tiler - master and stack vertically  
 ```Super_L - 2``` &nbsp; &nbsp; tiler - vertically  
 ```Super_L - 3``` &nbsp; &nbsp; tiler - master and stack horizontally  
@@ -49,7 +49,7 @@ Most important hotkeys (full set see config-file):
 
 
 # Configuration
-Well, edit the (hopefully) self-explanatory config-file xpytile.conf
+Well, edit the _hopefully_ self-explanatory config-file xpytile.conf
 
 
 # Installation
@@ -81,5 +81,5 @@ When the program crashes, it writes traceback info in /tmp/xpytile_&lt;USERNAME&
 *(A)* On workspaces that span multiple monitors, simultaneous resizing works fine, tiling not really.
 
 *(Q)* How do I get the exact name and title of a window I want xpytile to ignore?  
-*(A)* Run xpyile with -v (or -vv)  or use the hotkey to log name and title of the current window.
+*(A)* Run xpyile with -v _or -vv_  or use the hotkey to log name and title of the current window.
 
