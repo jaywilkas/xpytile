@@ -53,7 +53,7 @@ Well, edit the (hopefully) self-explanatory config-file xpytile.conf
 
 
 # Installation
-Place xpytilerc in XDG_CONFIG_HOME in ~/.config/ , or in /etc respectively  
+Place xpytilerc in XDG_CONFIG_HOME in ~/.config/ or in /etc/ respectively  
 
 
 # Start
