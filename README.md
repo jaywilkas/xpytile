@@ -54,6 +54,7 @@ Well, edit the _hopefully_ self-explanatory config-file xpytile.conf
 
 # Installation
 Place xpytilerc in XDG_CONFIG_HOME in ~/.config/ or in /etc/ respectively  
+ArchLinux - users can install ```xpytile-git``` from the AUR 
 
 
 # Start
