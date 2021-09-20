@@ -71,7 +71,8 @@ notify-send _(package: notifylib for ArchLinux, notifylib-bin for Debian/Ubuntu)
 python3, python-xlib 
 
 # Bugs
-I'm currently not aware of a bug.
+The script currently doesn't work perfectly, when xfce4-bar is placed on the upper or right side of the screen.
+I'm currently not aware of another bug.
 When the program crashes, it writes traceback info in ```/tmp/xpytile_<USERNAME>.log```
 
 # Questions
