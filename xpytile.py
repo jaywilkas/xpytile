@@ -22,18 +22,18 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-import time
-import datetime
-import sys
-import os
-import shutil
-import Xlib.display, Xlib.XK, Xlib.error, Xlib.protocol
-import subprocess
-import socket
-import configparser
 import argparse
-import re
+import configparser
+import datetime
 from functools import lru_cache
+import os
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import time
+import Xlib.display, Xlib.XK, Xlib.error, Xlib.protocol
 
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -648,7 +648,7 @@ def recreate_window_geometries():
             y = tilingInfo['userDefinedGeom'][currentDesktop][winID]['y']
             width = tilingInfo['userDefinedGeom'][currentDesktop][winID]['width']
             height = tilingInfo['userDefinedGeom'][currentDesktop][winID]['height']
-            unmaximizeWindow(windowsInfo[winID]['win'])
+            unmaximize_window(windowsInfo[winID]['win'])
 
             windowsInfo[winID]['win'].set_input_focus(Xlib.X.RevertToParent, Xlib.X.CurrentTime)
             windowsInfo[winID]['win'].configure(stack_mode=Xlib.X.Above)
@@ -785,7 +785,7 @@ def set_setxy_win(winID):
         return
 
     try:
-        unmaximizeWindow(windowsInfo[winID]['win'])
+        unmaximize_window(windowsInfo[winID]['win'])
         oldY = windowsInfo[winID]['y']
         oldX = windowsInfo[winID]['x']
         windowsInfo[winID]['winParent'].configure(y=oldY + 1)
@@ -992,12 +992,12 @@ def tile_windows_horizontally(desktop):
         return
 
     # geometry of work area (screen without taskbar)
-    workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+    workAreaX0, workAreaY0, workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[:4]
 
     if len(winIDs) == 1:
         set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
-            set_window_position(winIDs[0], x=0, y=0)
+            set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
             disp.sync()
             update_windows_info()
@@ -1009,26 +1009,27 @@ def tile_windows_horizontally(desktop):
 
     set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # check whether this window can stay as it is
-    if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
-            windowsInfo[winIDs[0]]['y2'] == workAreaHeight - 1 and \
-            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] < workAreaWidth - (N - 1) * tilingInfo['minSize']:
-        set_window_position(winIDs[0], x=0, y=0)
+    if windowsInfo[winIDs[0]]['x'] == workAreaX0 and windowsInfo[winIDs[0]]['y'] == workAreaY0 and \
+            windowsInfo[winIDs[0]]['y2'] - workAreaY0 == workAreaHeight - 1 and \
+            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] - workAreaX0 < \
+                workAreaWidth - (N - 1) * tilingInfo['minSize']:
+        set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         I = 1
         x = windowsInfo[winIDs[0]]['x2'] + 1
         width = int((workAreaWidth - x) / (N - 1))
     else:
         I = 0
-        x = 0
+        x = workAreaX0
         width = int(workAreaWidth / N)
 
     # Place (all or remaining) windows from left to right (max. maxNumWindows)
-    y = 0
+    y = workAreaY0
     for i, winID in enumerate(winIDs[I:N]):
         if i == N - 1:
-            width = workAreaWidth - x + 1
-        unmaximizeWindow(windowsInfo[winID]["win"])
+            width = workAreaWidth + workAreaX0 - x + 1
+        unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
-        set_window_position(winID, x=x, y=0)
+        set_window_position(winID, x=x, y=workAreaY0)
         set_window_size(winID, width=width, height=workAreaHeight + 1)
         x += width
 
@@ -1059,12 +1060,12 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
         return
 
     # geometry of work area (screen without taskbar)
-    workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+    workAreaX0, workAreaY0, workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[:4]
 
     if len(winIDs) == 1:
         set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
-            set_window_position(winIDs[0], x=0, y=0)
+            set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
             disp.sync()
             update_windows_info()
@@ -1075,11 +1076,11 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
 
     set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the upper part of the screen
-    if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
-            windowsInfo[winIDs[0]]['x2'] == workAreaWidth - 1 and \
-            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['y2'] < workAreaWidth - tilingInfo['minSize']:
+    if windowsInfo[winIDs[0]]['x'] == workAreaX0 and windowsInfo[winIDs[0]]['y'] == workAreaY0 and \
+            windowsInfo[winIDs[0]]['x2'] - workAreaX0 == workAreaWidth - 1 and \
+            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['y2'] - workAreaY0 < workAreaWidth - tilingInfo['minSize']:
         # window can stay as it is
-        set_window_position(winIDs[0], x=0, y=0)
+        set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         height = windowsInfo[winIDs[0]]['height']
         if resizeMaster != 0:
             height += resizeMaster
@@ -1092,22 +1093,22 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
             return
     else:
         # the window needs to be repositioned
-        unmaximizeWindow(windowsInfo[winIDs[0]]["win"])
+        unmaximize_window(windowsInfo[winIDs[0]]["win"])
         height = int(workAreaHeight * tilingInfo['masterAndStackHoriz']['defaultHeightMaster'])
-        set_window_position(winIDs[0], x=0, y=0)
+        set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         set_window_size(winIDs[0], width=workAreaWidth, height=height)
 
     # Stack the remaining windows (max. maxNumWindows - 1) on the lower part of the screen
     N = min(tilingInfo['masterAndStackVertic']['maxNumWindows'] - 1, len(winIDs) - 1)
-    x = 0
-    y = height
+    x = workAreaX0
+    y = height + workAreaY0
     height = workAreaHeight - height
     width = int(workAreaWidth / N)
 
     for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
-            width = workAreaWidth - x + 1
-        unmaximizeWindow(windowsInfo[winID]["win"])
+            width = workAreaWidth + workAreaX0 - x + 1
+        unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
@@ -1140,12 +1141,12 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
         return
 
     # geometry of work area (screen without taskbar)
-    workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+    workAreaX0, workAreaY0, workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[:4]
 
     if len(winIDs) == 1:
         set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
-            set_window_position(winIDs[0], x=0, y=0)
+            set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
             disp.sync()
             update_windows_info()
@@ -1156,11 +1157,11 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
 
     set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
     # Place first window as master on the left side of the screen
-    if windowsInfo[winIDs[0]]['x'] == 0 and windowsInfo[winIDs[0]]['y'] == 0 and \
-            windowsInfo[winIDs[0]]['y2'] == workAreaHeight - 1 and \
-            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] < workAreaWidth - tilingInfo['minSize']:
+    if windowsInfo[winIDs[0]]['x'] == workAreaX0 and windowsInfo[winIDs[0]]['y'] == workAreaY0 and \
+            windowsInfo[winIDs[0]]['y2'] - workAreaY0 == workAreaHeight - 1 and \
+            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['x2'] - workAreaX0 < workAreaWidth - tilingInfo['minSize']:
         # the window can stay there
-        set_window_position(winIDs[0], x=0, y=0)
+        set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         width = windowsInfo[winIDs[0]]['width']
         if resizeMaster != 0:
             width += resizeMaster
@@ -1173,22 +1174,22 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
             return
     else:
         # the window needs to be repositioned
-        unmaximizeWindow(windowsInfo[winIDs[0]]['win'])
+        unmaximize_window(windowsInfo[winIDs[0]]['win'])
         width = int(workAreaWidth * tilingInfo['masterAndStackVertic']['defaultWidthMaster']) + resizeMaster
-        set_window_position(winIDs[0], x=0, y=0)
+        set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         set_window_size(winIDs[0], width=width, height=workAreaHeight)
 
     # Stack the remaining windows (max. maxNumWindows - 1) on the right part of the screen
     N = min(tilingInfo['masterAndStackVertic']['maxNumWindows'] - 1, len(winIDs) - 1)
-    x = width
-    y = 0
+    x = width + workAreaX0
+    y = workAreaY0
     width = workAreaWidth - width
     height = int(workAreaHeight / N)
 
     for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
-            height = workAreaHeight - y + 1
-        unmaximizeWindow(windowsInfo[winID]["win"])
+            height = workAreaHeight + workAreaY0 - y + 1
+        unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
@@ -1214,12 +1215,12 @@ def tile_windows_maximize(desktop, winID=None):
     global Xroot, disp, NET_WM_STATE_MAXIMIZED_VERT, NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, ANY_PROPERTYTYPE
 
     # geometry of work area (screen without taskbar)
-    workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+    workAreaX0, workAreaY0, workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[:4]
 
     if winID is None:
         winID = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
     set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
-    set_window_position(winID, x=0, y=0)
+    set_window_position(winID, x=workAreaX0, y=workAreaY0)
     set_window_size(winID, width=workAreaWidth, height=workAreaHeight)
 
     mask = (Xlib.X.SubstructureRedirectMask | Xlib.X.SubstructureNotifyMask)
@@ -1249,12 +1250,12 @@ def tile_windows_vertically(desktop):
         return
 
     # geometry of work area (screen without taskbar)
-    workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+    workAreaX0, workAreaY0, workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[:4]
 
     if len(winIDs) == 1:
         set_window_decoration(winIDs[0], tilingInfo['windowDecoration'][desktop])
         if tilingInfo['maximizeWhenOneWindowLeft'][desktop]:
-            set_window_position(winIDs[0], x=0, y=0)
+            set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
             set_window_size(winIDs[0], width=workAreaWidth, height=workAreaHeight)
             disp.sync()
             update_windows_info()
@@ -1265,14 +1266,14 @@ def tile_windows_vertically(desktop):
 
     # Stack windows (max. maxNumWindows)
     N = min(tilingInfo['vertically']['maxNumWindows'], len(winIDs))
-    y = 0
+    y = workAreaY0
     height = int(workAreaHeight / N)
     for i, winID in enumerate(winIDs[:N]):
         if i == N - 1:
-            height = workAreaHeight - y + 1
-        unmaximizeWindow(windowsInfo[winID]['win'])
+            height = workAreaHeight + workAreaY0 - y + 1
+        unmaximize_window(windowsInfo[winID]['win'])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
-        set_window_position(winID, x=0, y=y)
+        set_window_position(winID, x=workAreaX0, y=y)
         set_window_size(winID, width=workAreaWidth, height=height)
         y += height
 
@@ -1348,7 +1349,7 @@ def toggle_window_decoration():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def unmaximizeWindow(window):
+def unmaximize_window(window):
     """
     Un-maximize the given window
 
@@ -1455,7 +1456,7 @@ def update_windows_info():
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def writeCrashLog():
+def write_crashlog():
     """
     Writes, respectively appends trace-back information into /tmp/xpytile_<USER>.log
     :return:
@@ -1546,7 +1547,7 @@ if __name__ == '__main__':
         try:
             shutil.copyfile('/etc/xpytilerc', os.path.expanduser(configFilePath))
         except:
-            writeCrashLog()
+            write_crashlog()
             raise SystemExit('No config-file found')
 
     global verbosityLevel
@@ -1582,4 +1583,4 @@ if __name__ == '__main__':
         raise SystemExit(' terminated by ctrl-c')
     except:
         # Something went wrong, write traceback info in /tmp
-        writeCrashLog()
+        write_crashlog()
