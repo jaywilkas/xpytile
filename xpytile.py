@@ -274,6 +274,9 @@ def handle_key_event(keyCode, windowID_active, window_active):
     elif keyCode == hotkeys['cyclewindows']:
         update_windows_info()
         cycle_windows()
+    elif keyCode == hotkeys['cycletiler']:
+        update_windows_info()
+        tile_windows(manuallyTriggered=True, tilerNumber='next')
     elif keyCode == hotkeys['swapwindows']:
         update_windows_info()
         swap_windows(windowID_active)
@@ -942,7 +945,9 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
     for the current desktop, or -if given- for the desktops in desktopList
 
     :param manuallyTriggered:  status, whether called automatically or manually
-    :param tilerNumber:        number which tiler to set and use
+    :param tilerNumber:        number which tiler to set and use,
+                               or None, to take the currently selected tiler,
+                               or 'next' to cycle to next tiler
     :param desktopList:        list of desktops where tiling needs to be done
     :param resizeMaster:       number of pixels the master should be resized
     :return:
@@ -958,7 +963,10 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
             continue
 
         if manuallyTriggered:
-            tilingInfo['tiler'][desktop] = tilerNumber
+            if tilerNumber == 'next':
+                tilingInfo['tiler'][desktop] = [2,3,4,5,1][tilingInfo['tiler'][desktop]-1]
+            else:
+                tilingInfo['tiler'][desktop] = tilerNumber
 
         if resizeMaster != 0 and tilingInfo['tiler'][desktop] not in [1, 3]:
             continue  # no tiler with a master window

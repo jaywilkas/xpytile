@@ -24,7 +24,7 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Globaltime"
                 name: "Gimp"
                 name: "krusader" !title: "^Krusader$"
-                name: "Thunderbird" !title: "Mozilla Thunderbird$"
+                name: "Thunderbird" !title: ".*Mozilla Thunderbird.*"
                 name: "Doublecmd" !title: "^Double Commander "
                 name: "jetbrains-pycharm" title: "(Confirm|Tip(p){0,1}|Settings)"
 
@@ -178,6 +178,10 @@ toggleDecoration = 52
 # cycle all -not minimized- windows on the current desktop
 # 49: ^
 cycleWindows = 49
+
+# cycle tiler
+# 54: 'c'
+cycleTiler = 54
 
 # swap active window with the top most- / left- one
 # 9: ESC

@@ -35,6 +35,7 @@ Most important hotkeys _(full set see config-file)_:
 ```Super_L - 3``` &nbsp; &nbsp; tiler - master and stack horizontally  
 ```Super_L - 4``` &nbsp; &nbsp; tiler - horizontally  
 ```Super_L - 0``` &nbsp; &nbsp; tiler - maximize  
+```Super_L - c``` &nbsp; &nbsp; cycle tiler  
 ```Super_L - 5``` &nbsp; &nbsp; restore windows layout  
 ```Super_L - 6``` &nbsp; &nbsp; store windows layout  
 ```Super_L - ^``` &nbsp; &nbsp; cycle windows  
