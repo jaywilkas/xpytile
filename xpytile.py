@@ -1086,7 +1086,7 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
     # Place first window as master on the upper part of the screen
     if windowsInfo[winIDs[0]]['x'] == workAreaX0 and windowsInfo[winIDs[0]]['y'] == workAreaY0 and \
             windowsInfo[winIDs[0]]['x2'] - workAreaX0 == workAreaWidth - 1 and \
-            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['y2'] - workAreaY0 < workAreaWidth - tilingInfo['minSize']:
+            tilingInfo['minSize'] < windowsInfo[winIDs[0]]['y2'] - workAreaY0 < workAreaHeight - tilingInfo['minSize']:
         # window can stay as it is
         set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         height = windowsInfo[winIDs[0]]['height']
