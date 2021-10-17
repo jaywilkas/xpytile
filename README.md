@@ -42,11 +42,14 @@ Most important hotkeys _(full set see config-file)_:
 ```Super_L - ESC``` swap current window with top/left-most window  
 ```Super_L - q``` &nbsp; &nbsp; toggle simultaneous resizing (on/off)  
 ```Super_L - w``` &nbsp; &nbsp; toggle tiling (on/off)  
-```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows  
+```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows (*)  
 ```Super_L - a``` &nbsp; &nbsp; shrink width/height of master window  
 ```Super_L - s``` &nbsp; &nbsp; enlarge width/height of master window  
 ```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in ```/tmp/xpytile_<USERNAME>.log```   
 ```Super_L - -``` &nbsp; &nbsp; exit  
+
+*) Hint: In XFCE one can resize windows with ```Alt - Right-Click``` and drag,  
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;which is useful when windows-decorations are turned off
 
 
 # Configuration
@@ -87,4 +90,4 @@ However, when the program crashes it writes traceback info in ```/tmp/xpytile_<U
 
 *(Q)* What can I do, xptile isn't picking up my hotkeys?  
 *(A)* Run ```./getModifierCode.py```, press ```Super_L - 1``` _(or the modifier you'd like to use)_  
-      and check/edit ```xpytilerc``` _(line: modifier = )_
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and check/edit ```xpytilerc``` _(line: modifier = )_
