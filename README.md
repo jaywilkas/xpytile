@@ -68,7 +68,7 @@ with Xfce-Menu -> Settings -> Keyboard -> Application Shortcuts
 
 
 # Dependencies
-notify-send _(package: notifylib for ArchLinux, notifylib-bin for Debian/Ubuntu)_
+notify-send _(package: notifylib for ArchLinux, notifylib-bin for Debian/Ubuntu)  
 python3, python-xlib 
 
 # Bugs
@@ -84,4 +84,8 @@ When the program crashes, it writes traceback info in ```/tmp/xpytile_<USERNAME>
 
 *(Q)* How do I get the exact name and title of a window I want xpytile to ignore?  
 *(A)* Run xpyile with -v _or -vv_  or use the hotkey to log name and title of the current window.
+
+*(Q)* What can I do, xptile isn't picking up my hotkeys  
+*(A)* Run ```./getModifierCode.py```, press ```Super_L - 1``` _(or the modifier you'd like to use)_ and check/edit ```xpytilerc``` (line: modifier = )
+
 
