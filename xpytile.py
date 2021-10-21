@@ -148,12 +148,15 @@ def get_parent_window(window):
     :return:          parent window
     """
 
-    pointer = window
-    while pointer.id != Xroot.id:
-        parentWindow = pointer
-        pointer = pointer.query_tree().parent
+    try:
+        pointer = window
+        while pointer.id != Xroot.id:
+            parentWindow = pointer
+            pointer = pointer.query_tree().parent
 
-    return parentWindow
+        return parentWindow
+    except:
+        return None  # window vanished
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -169,7 +172,7 @@ def get_window_geometry(win):
     try:
         return get_parent_window(win).get_geometry()
     except:
-        return None
+        return None   # window vanished
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -929,13 +932,16 @@ def swap_windows(winID):
     if winID == winIDs[0]:
         return  # selected window is the top- / left- most one
 
-    set_window_position(winID, x=windowsInfo[winIDs[0]]['x'], y=windowsInfo[winIDs[0]]['y'])
-    set_window_size(winID, width=windowsInfo[winIDs[0]]['width'], height=windowsInfo[winIDs[0]]['height'])
-    set_window_position(winIDs[0], x=windowsInfo[winID]['x'], y=windowsInfo[winID]['y'])
-    set_window_size(winIDs[0], width=windowsInfo[winID]['width'], height=windowsInfo[winID]['height'])
+    try:
+        set_window_position(winID, x=windowsInfo[winIDs[0]]['x'], y=windowsInfo[winIDs[0]]['y'])
+        set_window_size(winID, width=windowsInfo[winIDs[0]]['width'], height=windowsInfo[winIDs[0]]['height'])
+        set_window_position(winIDs[0], x=windowsInfo[winID]['x'], y=windowsInfo[winID]['y'])
+        set_window_size(winIDs[0], width=windowsInfo[winID]['width'], height=windowsInfo[winID]['height'])
 
-    disp.sync()
-    update_windows_info()
+        disp.sync()
+        update_windows_info()
+    except:
+        pass  # window vanished
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
