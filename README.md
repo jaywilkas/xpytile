@@ -1,6 +1,6 @@
 # xpytile
 
-**Tiling** and **simultaneous resizing** of side-by-side windows _(not only)_ for Xfce.
+**Tiling** and **simultaneous resizing** of side-by-side windows _(not only)_ for Xfce.  
 Tested with Xfce, it should work with any window manager compliant to the EWMH standard.
 
 
@@ -9,7 +9,7 @@ A Python script to auto-tile and to simultaneously resize docked windows.
 
 
 ## Features:
-Simultaneous resizing of adjacent windows
+Simultaneous resizing of adjacent windows  
 5 different tilers
 Hotkeys for:
  - Tiling and/or simultaneous resizing can be enabled/disabled
