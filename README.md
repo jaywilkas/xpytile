@@ -1,6 +1,6 @@
 # xpytile
 
-**Tiling** and **simultaneous resizing** of side-by-side windows _(not only)_ for Xfce.
+**Tiling** and **simultaneous resizing** of side-by-side windows _(not only)_ for Xfce.  
 Tested with Xfce, it should work with any window manager compliant to the EWMH standard.
 
 
@@ -9,8 +9,9 @@ A Python script to auto-tile and to simultaneously resize docked windows.
 
 
 ## Features:
-Simultaneous resizing of adjacent windows
-5 different tilers
+Simultaneous resizing of adjacent windows  
+5 different tilers  
+
 Hotkeys for:
  - Tiling and/or simultaneous resizing can be enabled/disabled
  - Tiling can be triggered manually on demand
@@ -28,7 +29,7 @@ Pure Python, easily hackable
 
 
 # Hotkeys
-Hotkeys can be defined in the config-file.
+Hotkeys can be defined in the config-file.  
 Most important hotkeys _(full set see config-file)_:  
 ```Super_L - 1``` &nbsp; &nbsp; tiler - master and stack vertically  
 ```Super_L - 2``` &nbsp; &nbsp; tiler - vertically  
@@ -65,9 +66,9 @@ ArchLinux - users can install ```xpytile-git``` from the AUR
 ```./xpytile.py``` 
 or, to let run in background:  ```nohup ./xpytile.py > /dev/null 2>&1 &```
 
-You may want to assign a hotkey.
-In Xfce for example, add a shortcut to xpytile.py
-with Xfce-Menu -> Settings -> Keyboard -> Application Shortcuts
+You may want to assign a hotkey.  
+In Xfce for example, add a shortcut to xpytile.py with:  
+Xfce-Menu -> Settings -> Keyboard -> Application Shortcuts
 
 
 # Dependencies
