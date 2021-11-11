@@ -1113,7 +1113,7 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
         set_window_size(winIDs[0], width=workAreaWidth, height=height)
 
     # Stack the remaining windows (max. maxNumWindows - 1) on the lower part of the screen
-    N = min(tilingInfo['masterAndStackVertic']['maxNumWindows'] - 1, len(winIDs) - 1)
+    N = min(tilingInfo['masterAndStackHoriz']['maxNumWindows'] - 1, len(winIDs) - 1)
     x = workAreaX0
     y = height + workAreaY0
     height = workAreaHeight - height
