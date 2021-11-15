@@ -19,13 +19,13 @@ Hotkeys for:
  - Storing and re-creating current windows layout
  - Cycling windows
  - Swap windows
- - Set/unset window decoration
-All settings are workspace specific.
-So for each workspace you can choose independently,
-if tiling is enabled and which tiler should be used. 
-No limit of supported workspaces
-Config-file
-Pure Python, easily hackable
+ - Set/unset window decoration  
+
+All settings are workspace specific.  
+So for each workspace you can choose independently, if tiling is enabled and which tiler should be used. 
+No limit of supported workspaces  
+Config-file  
+Pure Python, easily hackable  
 
 
 # Hotkeys
