@@ -76,6 +76,26 @@ class _list(object):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def change_num_max_windows_by(deltaNum):
+    """
+    Change the max number of windows to tile  (limited between minimal 2 and maximal 9 windows)
+    :param   deltaNum: increment number of max windows by this value
+    :return:
+    """
+    global Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
+
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    tilerNumber = tilingInfo['tiler'][currentDesktop]
+    tilerNames_dict = {1: 'masterAndStackVertic', 2: 'vertically', 3: 'masterAndStackHoriz', 4: 'horizontally'}
+    try:
+        tilerName = tilerNames_dict[tilerNumber]
+    except KeyError:
+        return
+
+    tilingInfo[tilerName]['maxNumWindows'] = min(max(tilingInfo[tilerName]['maxNumWindows'] + deltaNum, 2), 9)
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def cycle_windows():
     """
     Cycles all -not minimized- windows of the current desktop
@@ -202,7 +222,8 @@ def get_windows_name(winID, window):
 # ----------------------------------------------------------------------------------------------------------------------
 def get_windows_on_desktop(desktop):
     """
-    Return a list of window-IDs of all -non minimized- windows from our list on the given desktop
+    Return a list of window-IDs of all -not minimized and not sticky-
+    windows from our list on the given desktop
 
     :param  desktop:   number of desktop
     :return:           list of window-IDs
@@ -251,7 +272,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
     :param keyCode:          The code of the pressed (to be precise: released) hotkey
     :param windowID_active:  ID of active window
     :param window_active:    active window
-    :return:
+    :return:                 windowID_active, window_active
     """
     global hotkeys, tilingInfo, windowsInfo, disp
 
@@ -298,6 +319,14 @@ def handle_key_event(keyCode, windowID_active, window_active):
     elif keyCode == hotkeys['tilemaximize']:
         update_windows_info()
         tile_windows(manuallyTriggered=True, tilerNumber=5)
+    elif keyCode == hotkeys['increasemaxnumwindows']:
+        change_num_max_windows_by(1)
+        update_windows_info()
+        tile_windows()
+    elif keyCode == hotkeys['decreasemaxnumwindows']:
+        change_num_max_windows_by(-1)
+        update_windows_info()
+        tile_windows()
     elif keyCode == hotkeys['recreatewindowslayout']:
         recreate_window_geometries()
     elif keyCode == hotkeys['storecurrentwindowslayout']:
@@ -305,6 +334,14 @@ def handle_key_event(keyCode, windowID_active, window_active):
         store_window_geometries()
     elif keyCode == hotkeys['logactivewindow']:
         log_active_window(windowID_active, window_active)
+    elif keyCode == hotkeys['focusup']:
+        windowID_active, window_active = set_window_focus(windowID_active, window_active, 'up')
+    elif keyCode == hotkeys['focusdown']:
+        windowID_active, window_active = set_window_focus(windowID_active, window_active, 'down')
+    elif keyCode == hotkeys['focusleft']:
+        windowID_active, window_active = set_window_focus(windowID_active, window_active, 'left')
+    elif keyCode == hotkeys['focusright']:
+        windowID_active, window_active = set_window_focus(windowID_active, window_active, 'right')
     elif keyCode == hotkeys['exit']:
         # On exit, make sure all windows are decorated
         update_windows_info()
@@ -313,6 +350,8 @@ def handle_key_event(keyCode, windowID_active, window_active):
         disp.sync()
         notify('exit')
         quit()
+
+    return windowID_active, window_active
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -836,6 +875,79 @@ def set_window_decoration(winID, status):
         set_window_size(winID, width=windowsInfo[winID]['width'], height=windowsInfo[winID]['height'])
     except:
         pass
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def set_window_focus(windowID_active, window_active, direction='left'):
+    """
+    Make another window the active one.
+    Move the focus from the currently active window to the next adjacent one
+    in the given direction.
+    Metric: Distance in the given direction  plus
+            half of the distance in the orthogonal direction
+
+    :param windowID_active:  ID of active window
+    :param window_active:    active window
+    :param direction:        'left', 'right', 'up' or 'down'
+    :return:                 windowID_active, window_active
+    """
+    global windowsInfo, disp
+
+    # get a list of all -not minimized and not ignored- windows of the current desktop
+    desktop = windowsInfo[windowID_active]['desktop']
+    winIDs = get_windows_on_desktop(desktop)
+
+    if len(winIDs) < 2:
+        return
+
+    winID_next = None
+    bestDistance = 1E99
+
+    x_active = windowsInfo[windowID_active]['x']
+    y_active = windowsInfo[windowID_active]['y']
+
+    for winID in winIDs:
+        if winID == windowID_active:
+            continue
+
+        x = windowsInfo[winID]['x']
+        y = windowsInfo[winID]['y']
+        distance = 1E99
+
+        if direction == 'up':
+            if y_active <= y:
+                continue
+            else:
+                distance = y_active - y + abs(x - x_active)/2
+        elif direction == 'down':
+            if y_active >= y:
+                continue
+            else:
+                distance = y - y_active + abs(x - x_active)/2
+        elif direction == 'right':
+            if x_active >= x:
+                continue
+            else:
+                distance = x - x_active + abs(y - y_active)/2
+        elif direction == 'left':
+            if x_active <= x:
+                continue
+            else:
+                distance = x_active - x + abs(y - y_active)/2
+
+        if distance < bestDistance:
+            bestDistance = distance
+            winID_next = winID
+
+    if winID_next:
+        # set focus and make shure the window is in foreground
+        windowsInfo[winID_next]["win"].set_input_focus(Xlib.X.RevertToParent, 0)
+        windowsInfo[winID_next]["win"].configure(stack_mode=Xlib.X.Above)
+        # update windowID_active and window_active, to inform function run()
+        windowID_active = winID_next
+        window_active = disp.create_resource_object('window', windowID_active)
+
+    return windowID_active, window_active
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1544,7 +1656,7 @@ def run(window_active, window_active_parent, windowID_active):
                 resize_docked_windows(windowID_active, window_active, moved_border)
             update_windows_info()
         elif event.type == KEY_RELEASE:
-            handle_key_event(event.detail, windowID_active, window_active)
+            windowID_active, window_active = handle_key_event(event.detail, windowID_active, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
 
 
@@ -1595,6 +1707,8 @@ if __name__ == '__main__':
         run(window_active, window_active_parent, windowID_active)
     except KeyboardInterrupt:
         raise SystemExit(' terminated by ctrl-c')
+    except SystemExit:
+        pass
     except:
         # Something went wrong, write traceback info in /tmp
         write_crashlog()

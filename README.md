@@ -19,35 +19,42 @@ Hotkeys for:
  - Storing and re-creating current windows layout
  - Cycling windows
  - Swap windows
- - Set/unset window decoration
-All settings are workspace specific.
-So for each workspace you can choose independently,
-if tiling is enabled and which tiler should be used. 
-No limit of supported workspaces
-Config-file
-Pure Python, easily hackable
+ - Set/unset window decoration  
+
+All settings are workspace specific.  
+So for each workspace you can choose independently, if tiling is enabled and which tiler should be used. 
+No limit of supported workspaces  
+Config-file  
+Pure Python, easily hackable  
+
+### New features
+Focus can be set to next adjacent window, in the direction of the pressed arrow-key  
+Max. number of tiled windows for the currently active tiler can be increased/decreased per hot-key  
 
 
 # Hotkeys
 Hotkeys can be defined in the config-file.  
 Most important hotkeys _(full set see config-file)_:  
-```Super_L - 1``` &nbsp; &nbsp; tiler - master and stack vertically  
-```Super_L - 2``` &nbsp; &nbsp; tiler - vertically  
-```Super_L - 3``` &nbsp; &nbsp; tiler - master and stack horizontally  
-```Super_L - 4``` &nbsp; &nbsp; tiler - horizontally  
-```Super_L - 0``` &nbsp; &nbsp; tiler - maximize  
-```Super_L - c``` &nbsp; &nbsp; cycle tiler  
-```Super_L - 5``` &nbsp; &nbsp; restore windows layout  
-```Super_L - 6``` &nbsp; &nbsp; store windows layout  
-```Super_L - ^``` &nbsp; &nbsp; cycle windows  
-```Super_L - ESC``` swap current window with top/left-most window  
-```Super_L - q``` &nbsp; &nbsp; toggle simultaneous resizing (on/off)  
-```Super_L - w``` &nbsp; &nbsp; toggle tiling (on/off)  
-```Super_L - y``` &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows (*)  
-```Super_L - a``` &nbsp; &nbsp; shrink width/height of master window  
-```Super_L - s``` &nbsp; &nbsp; enlarge width/height of master window  
-```Super_L - .``` &nbsp; &nbsp; log name & tile of active window in ```/tmp/xpytile_<USERNAME>.log```   
-```Super_L - -``` &nbsp; &nbsp; exit  
+```Super_L - 1``` &nbsp; &nbsp; &nbsp; &nbsp; tiler - master and stack vertically  
+```Super_L - 2``` &nbsp; &nbsp; &nbsp; &nbsp; tiler - vertically  
+```Super_L - 3``` &nbsp; &nbsp; &nbsp; &nbsp; tiler - master and stack horizontally  
+```Super_L - 4``` &nbsp; &nbsp; &nbsp; &nbsp; tiler - horizontally  
+```Super_L - 0``` &nbsp; &nbsp; &nbsp; &nbsp; tiler - maximize  
+```Super_L - c``` &nbsp; &nbsp; &nbsp; &nbsp; cycle tiler  
+```Super_L - 5``` &nbsp; &nbsp; &nbsp; &nbsp; restore windows layout  
+```Super_L - 6``` &nbsp; &nbsp; &nbsp; &nbsp; store windows layout  
+```Super_L - ^``` &nbsp; &nbsp; &nbsp; &nbsp; cycle windows  
+```Super_L - ESC``` &nbsp; &nbsp; swap current window with top/left-most window  
+```Super_L - q``` &nbsp; &nbsp; &nbsp; &nbsp; toggle simultaneous resizing (on/off)  
+```Super_L - w``` &nbsp; &nbsp; &nbsp; &nbsp; toggle tiling (on/off)  
+```Super_L - y``` &nbsp; &nbsp; &nbsp; &nbsp; toggle window-decoration (on/off) of tiled windows (*)  
+```Super_L - a``` &nbsp; &nbsp; &nbsp; &nbsp; shrink width/height of master window  
+```Super_L - s``` &nbsp; &nbsp; &nbsp; &nbsp; enlarge width/height of master window  
+```Super_L - m``` &nbsp; &nbsp; &nbsp; &nbsp; increment number of max. tiled windows for active tiler  
+```Super_L - n``` &nbsp; &nbsp; &nbsp; &nbsp; decrement number of max. tiled windows for active tiler  
+```Super_L - arrow``` &nbsp;focus next adjacent window in the given direction   
+```Super_L - .``` &nbsp; &nbsp; &nbsp; &nbsp; log name & tile of active window in ```/tmp/xpytile_<USERNAME>.log```   
+```Super_L - -``` &nbsp; &nbsp; &nbsp; &nbsp; exit  
 
 *) Hint: In XFCE one can resize windows with ```Alt - Right-Click``` and drag,  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;which is useful when windows-decorations are turned off

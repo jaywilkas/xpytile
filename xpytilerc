@@ -215,6 +215,14 @@ tileHorizontally = 13
 # 19: "0"
 tileMaximize = 19
 
+# increase max number of windows to tile
+# 58 "m"
+increaseMaxNumWindows = 58
+
+# decrease max number of windows to tile
+# 57 "n"
+decreaseMaxNumWindows = 57
+
 # exit the tiling helper
 # 61: "-"
 exit = 61
@@ -231,6 +239,22 @@ shrinkMaster = 38
 # enlarge width/height of master window and (re-)tile
 # 39: "s"
 enlargeMaster = 39
+
+# make left window the active one
+# 113 "arrow-left"
+focusLeft = 113
+
+# make right window the active one
+# 114 "arrow-right"
+focusRight = 114
+
+# make upper window the active one
+# 111 "arrow-up"
+focusUp = 111
+
+# make lower window the active one
+# 116 "arrow-down"
+focusDown = 116
 
 
 # -----------------------------------------------------------------------------------------------------
