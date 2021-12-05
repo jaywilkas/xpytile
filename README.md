@@ -26,10 +26,13 @@ So for each workspace you can choose independently, if tiling is enabled and whi
 No limit of supported workspaces  
 Config-file  
 Pure Python, easily hackable  
+<<<<<<< HEAD
 
 ### New features
 Focus can be set to next adjacent window, in the direction of the pressed arrow-key  
 Max. number of tiled windows for the currently active tiler can be increased/decreased per hot-key  
+=======
+>>>>>>> 805ed9cde010f96922a45848db23cd14cb276d3c
 
 
 # Hotkeys
