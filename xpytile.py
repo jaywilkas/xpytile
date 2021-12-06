@@ -898,7 +898,7 @@ def set_window_focus(windowID_active, window_active, direction='left'):
     winIDs = get_windows_on_desktop(desktop)
 
     if len(winIDs) < 2:
-        return
+        return windowID_active, window_active
 
     winID_next = None
     bestDistance = 1E99
