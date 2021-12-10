@@ -355,6 +355,28 @@ def handle_key_event(keyCode, windowID_active, window_active):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def hightlight_mouse_cursor():
+    """
+    Highlight mouse cursor,  by hiding/showing several times
+    :return:
+    """
+    global disp, Xroot
+
+    if not disp.has_extension('XFIXES') or disp.query_extension('XFIXES') is None:
+        return
+
+    disp.xfixes_query_version()
+    for i in range(3):
+        if i != 0:
+            time.sleep(0.03)
+        Xroot.xfixes_hide_cursor()
+        disp.sync()
+        time.sleep(0.03)
+        Xroot.xfixes_show_cursor()
+        disp.sync()
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def init(configFile='~/.config/xpytilerc'):
     """
     Initialization
@@ -955,6 +977,7 @@ def set_window_focus(windowID_active, window_active, direction='left'):
             x = int((windowsInfo[winID_next]['x'] + windowsInfo[winID_next]['x2']) / 2)
             y = int((windowsInfo[winID_next]['y'] + windowsInfo[winID_next]['y2']) / 2)
             Xlib.ext.xtest.fake_input(disp, Xlib.X.MotionNotify, x=x, y=y)
+            hightlight_mouse_cursor()
         # update windowID_active and window_active, to inform function run()
         windowID_active = winID_next
         window_active = disp.create_resource_object('window', windowID_active)
@@ -1644,6 +1667,7 @@ def run(window_active, window_active_parent, windowID_active):
                           f'name: "{get_windows_name(windowID_active, window_active)}"\t'
                           f'title: "{get_windows_title(window_active)}"'
                           f'{["", ", num. windows changed"][numWindowsChanged]}')
+
                 else:
                     print(f'Desktop changed'
                           f'{["", ", num. windows changed"][numWindowsChanged]}')
