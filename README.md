@@ -29,7 +29,7 @@ Pure Python, easily hackable
 
 ### New features
 Option to set the mouse-cursor in the middle of the new active window, when changed by hotkey.  
-  This visual feedback is helpful, especially when the window decoration is turned off.  
+&nbsp; &nbsp; _This visual feedback is helpful, especially when the window decoration is turned off._  
 Focus can be set to next adjacent window, in the direction of the pressed arrow-key  
 Max. number of tiled windows for the currently active tiler can be increased/decreased per hot-key  
 
