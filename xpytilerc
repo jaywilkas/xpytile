@@ -63,6 +63,10 @@ minSize = 350
 # Step size when enlaging/shrinking master window by hotkey
 stepSize = 50
 
+# Move the mouse-cursor to the middle of the new active window, when the focus got changed
+#  by pressing the focusUp-, focusDown-, focusLeft- or focusRight- hotkey
+#  This visual feedback is helpful especially when the window decoration is turned off.
+moveMouseIntoActiveWindow = True
 
 
 # -----------------------------------------------------------------------------------------------------
@@ -146,7 +150,7 @@ maximizeWhenOneWindowLeft = True
 # Hotkey modifier
 # 64: "Super_L"
 # -1: any modifier
-modifier = 64
+modifier = 80
 
 # toggle the status of the current desktop
 # whether to simultaneously resize docked windows

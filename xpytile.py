@@ -555,6 +555,10 @@ def init_tiling_info(config):
     #   ... the increment when resizing the master window by hotkey.
     tilingInfo['stepSize'] = getConfigValue(config, 'General', 'stepSize', 50)
 
+    #   ... whether the mouse-cursor should follow a new active window (if selected by hotkey).
+    tilingInfo['moveMouseIntoActiveWindow'] = \
+        getConfigValue(config, 'General', 'moveMouseIntoActiveWindow', True, 'bool')
+
     tilingInfo['masterAndStackVertic'] = dict()
     tilingInfo['masterAndStackVertic']['maxNumWindows'] = \
         getConfigValue(config, 'masterAndStackVertic', 'maxNumWindows', 3)
@@ -881,17 +885,18 @@ def set_window_decoration(winID, status):
 def set_window_focus(windowID_active, window_active, direction='left'):
     """
     Make another window the active one.
-    Move the focus from the currently active window to the next adjacent one
-    in the given direction.
+    Move the focus from the currently active window to the next adjacent one in the given direction.
     Metric: Distance in the given direction  plus
             half of the distance in the orthogonal direction
+    Place the mouse-cursor in the middle of the new window, if the active window gets changed and the respective
+    option is set.
 
     :param windowID_active:  ID of active window
     :param window_active:    active window
     :param direction:        'left', 'right', 'up' or 'down'
     :return:                 windowID_active, window_active
     """
-    global windowsInfo, disp
+    global windowsInfo, tilingInfo, disp, Xroot
 
     # get a list of all -not minimized and not ignored- windows of the current desktop
     desktop = windowsInfo[windowID_active]['desktop']
@@ -943,6 +948,11 @@ def set_window_focus(windowID_active, window_active, direction='left'):
         # set focus and make shure the window is in foreground
         windowsInfo[winID_next]["win"].set_input_focus(Xlib.X.RevertToParent, 0)
         windowsInfo[winID_next]["win"].configure(stack_mode=Xlib.X.Above)
+        # place mouse-cursor in the middle of the new active window (if this option is activated)
+        if tilingInfo['moveMouseIntoActiveWindow']:
+            x = int((windowsInfo[winID_next]['x'] + windowsInfo[winID_next]['x2']) / 2)
+            y = int((windowsInfo[winID_next]['y'] + windowsInfo[winID_next]['y2']) / 2)
+            Xlib.ext.xtest.fake_input(disp, Xlib.X.MotionNotify, x=x, y=y)
         # update windowID_active and window_active, to inform function run()
         windowID_active = winID_next
         window_active = disp.create_resource_object('window', windowID_active)
