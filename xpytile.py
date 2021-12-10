@@ -911,6 +911,8 @@ def set_window_focus(windowID_active, window_active, direction='left'):
     x_active = windowsInfo[windowID_active]['x']
     y_active = windowsInfo[windowID_active]['y']
 
+    # iterate over all windows on the current desktop
+    # and find the next adjacent in the given direction
     for winID in winIDs:
         if winID == windowID_active:
             continue
@@ -945,7 +947,7 @@ def set_window_focus(windowID_active, window_active, direction='left'):
             winID_next = winID
 
     if winID_next:
-        # set focus and make shure the window is in foreground
+        # set focus and make sure the window is in foreground
         windowsInfo[winID_next]["win"].set_input_focus(Xlib.X.RevertToParent, 0)
         windowsInfo[winID_next]["win"].configure(stack_mode=Xlib.X.Above)
         # place mouse-cursor in the middle of the new active window (if this option is activated)

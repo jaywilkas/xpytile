@@ -150,7 +150,7 @@ maximizeWhenOneWindowLeft = True
 # Hotkey modifier
 # 64: "Super_L"
 # -1: any modifier
-modifier = 80
+modifier = 64
 
 # toggle the status of the current desktop
 # whether to simultaneously resize docked windows
