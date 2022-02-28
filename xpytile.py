@@ -1696,7 +1696,7 @@ def run(window_active, window_active_parent, windowID_active):
 # ----------------------------------------------------------------------------------------------------------------------
 
 
-if __name__ == '__main__':
+def main():
     configFile = 'xpytilerc'
     configPath = os.getenv('XDG_CONFIG_HOME')
     if configPath:
@@ -1748,3 +1748,7 @@ if __name__ == '__main__':
     except:
         # Something went wrong, write traceback info in /tmp
         write_crashlog()
+
+
+if __name__ == '__main__':
+    main()
