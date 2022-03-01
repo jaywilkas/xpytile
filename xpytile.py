@@ -368,10 +368,10 @@ def hightlight_mouse_cursor():
     disp.xfixes_query_version()
     for i in range(3):
         if i != 0:
-            time.sleep(0.05)
+            time.sleep(0.03)
         Xroot.xfixes_hide_cursor()
         disp.sync()
-        time.sleep(0.05)
+        time.sleep(0.03)
         Xroot.xfixes_show_cursor()
         disp.sync()
 # ----------------------------------------------------------------------------------------------------------------------
