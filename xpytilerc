@@ -150,7 +150,7 @@ maximizeWhenOneWindowLeft = True
 # Hotkey modifier
 # 64: "Super_L"
 # -1: any modifier
-modifier = 64
+modifier = 80
 
 # toggle the status of the current desktop
 # whether to simultaneously resize docked windows
@@ -277,23 +277,23 @@ on_Message = +++ ON +++
 off_Message = \-\-  off  \-\-
 
 infoTilingMustBeOn_Message = Tiling must be on
-infoTilingMustBeOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/dialog-information.png
+infoTilingMustBeOn_Icon = /usr/share/icons/gnome/32x32/emblem/emblem-important.png
 infoTilingMustBeOn_Summary = Info
 
-tilingOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
-tilingOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+tilingOn_Icon = /usr/share/icons/gnome/32x32/emblems/emblem-default.png
+tilingOff_Icon = /usr/share/icons/gnome/32x32/actions/list-remove.png
 tiling_Summary = Tiling
 
 storeCurrentWindowsLayout_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
 storeCurrentWindowsLayout_Message = Layout stored
 storeCurrentWindowsLayout_Summary = Windows
 
-resizingOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
-resizingOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+resizingOn_Icon = /usr/share/icons/gnome/32x32/emblems/emblem-default.png
+resizingOff_Icon = /usr/share/icons/gnome/32x32/actions/list-remove.png
 resizing_Summary = Resizing
 
-maximizeWhenOneWindowLeftOn_Icon = /usr/share/icons/Adwaita/32x32/legacy/emblem-default.png
-maximizeWhenOneWindowLeftOff_Icon = /usr/share/icons/Adwaita/32x32/legacy/list-remove.png
+maximizeWhenOneWindowLeftOn_Icon = /usr/share/icons/gnome/32x32/emblems/emblem-default.png
+maximizeWhenOneWindowLeftOff_Icon = /usr/share/icons/gnome/32x32/actions/list-remove.png
 maximizeWhenOneWindowLeft_Summary = max. when one window
 
 start_Icon = /usr/share/icons/gnome/32x32/devices/video-display.png
