@@ -81,7 +81,7 @@ Xfce-Menu -> Settings -> Keyboard -> Application Shortcuts
 
 
 # Dependencies
-notify-send _(package: notifylib for ArchLinux, notifylib-bin for Debian/Ubuntu)_
+notify-send _(package: notifylib for ArchLinux, libnotify-bin for Debian/Ubuntu)_
 python3, python-xlib 
 
 # Bugs
