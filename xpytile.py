@@ -281,18 +281,18 @@ def handle_key_event(keyCode, windowID_active, window_active):
     elif keyCode == hotkeys['toggletiling']:
         if toggle_tiling():
             update_windows_info()
-            tile_windows()
+            tile_windows(window_active)
     elif keyCode == hotkeys['toggleresizeandtiling']:
         toggle_resize()
         if toggle_tiling():
             update_windows_info()
-            tile_windows()
+            tile_windows(window_active)
     elif keyCode == hotkeys['toggledecoration']:
         toggle_window_decoration()
     elif keyCode == hotkeys['enlargemaster']:
-        tile_windows(resizeMaster=tilingInfo['stepSize'])
+        tile_windows(window_active, resizeMaster=tilingInfo['stepSize'])
     elif keyCode == hotkeys['shrinkmaster']:
-        tile_windows(resizeMaster=-tilingInfo['stepSize'])
+        tile_windows(window_active, resizeMaster=-tilingInfo['stepSize'])
     elif keyCode == hotkeys['togglemaximizewhenonewindowleft']:
         toggle_maximize_when_one_window()
     elif keyCode == hotkeys['cyclewindows']:
@@ -300,33 +300,33 @@ def handle_key_event(keyCode, windowID_active, window_active):
         cycle_windows()
     elif keyCode == hotkeys['cycletiler']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber='next')
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber='next')
     elif keyCode == hotkeys['swapwindows']:
         update_windows_info()
         swap_windows(windowID_active)
     elif keyCode == hotkeys['tilemasterandstackvertically']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber=1)
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber=1)
     elif keyCode == hotkeys['tilevertically']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber=2)
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber=2)
     elif keyCode == hotkeys['tilemasterandstackhorizontally']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber=3)
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber=3)
     elif keyCode == hotkeys['tilehorizontally']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber=4)
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber=4)
     elif keyCode == hotkeys['tilemaximize']:
         update_windows_info()
-        tile_windows(manuallyTriggered=True, tilerNumber=5)
+        tile_windows(window_active, manuallyTriggered=True, tilerNumber=5)
     elif keyCode == hotkeys['increasemaxnumwindows']:
         change_num_max_windows_by(1)
         update_windows_info()
-        tile_windows()
+        tile_windows(window_active)
     elif keyCode == hotkeys['decreasemaxnumwindows']:
         change_num_max_windows_by(-1)
         update_windows_info()
-        tile_windows()
+        tile_windows(window_active)
     elif keyCode == hotkeys['recreatewindowslayout']:
         recreate_window_geometries()
     elif keyCode == hotkeys['storecurrentwindowslayout']:
@@ -368,10 +368,10 @@ def hightlight_mouse_cursor():
     disp.xfixes_query_version()
     for i in range(3):
         if i != 0:
-            time.sleep(0.03)
+            time.sleep(0.05)
         Xroot.xfixes_hide_cursor()
         disp.sync()
-        time.sleep(0.03)
+        time.sleep(0.05)
         Xroot.xfixes_show_cursor()
         disp.sync()
 # ----------------------------------------------------------------------------------------------------------------------
@@ -616,7 +616,7 @@ def log_active_window(windowID_active, window_active):
     :return:
     """
 
-    fileName = os.path.join('/tmp', f'xpyfile_{os.environ["USER"]}.log')
+    fileName = os.path.join('/tmp', f'xpytile_{os.environ["USER"]}.log')
     with open(fileName, 'a') as f:
         dateStr = datetime.datetime.strftime(datetime.datetime.now(), '%x %X')
         f.write(f'[{dateStr}]  name: {get_windows_name(windowID_active, window_active)},'
@@ -1092,11 +1092,12 @@ def swap_windows(winID):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, resizeMaster=0):
+def tile_windows(window_active, manuallyTriggered=False, tilerNumber=None, desktopList=None, resizeMaster=0):
     """
     Calls the current or manually selected tiler
     for the current desktop, or -if given- for the desktops in desktopList
 
+    :param window_active:      active window
     :param manuallyTriggered:  status, whether called automatically or manually
     :param tilerNumber:        number which tiler to set and use,
                                or None, to take the currently selected tiler,
@@ -1133,7 +1134,7 @@ def tile_windows(manuallyTriggered=False, tilerNumber=None, desktopList=None, re
         elif tilingInfo['tiler'][desktop] == 4:
             tile_windows_horizontally(desktop)
         elif tilingInfo['tiler'][desktop] == 5:
-            tile_windows_maximize(desktop)
+            tile_windows_maximize(desktop, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1365,12 +1366,13 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def tile_windows_maximize(desktop, winID=None):
+def tile_windows_maximize(desktop, window_active, winID=None):
     """
     This 'tiler' just maximizes the active window
 
-    :param desktop:    desktop (given for possible future use)
-    :param winID:      ID of the window, if None: retrieve ID of active window
+    :param desktop:        desktop (given for possible future use)
+    :param window_active:  active window
+    :param winID:          ID of the window, if None: retrieve ID of active window
     :return:
     """
     global Xroot, disp, NET_WM_STATE_MAXIMIZED_VERT, NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, ANY_PROPERTYTYPE
@@ -1650,7 +1652,7 @@ def run(window_active, window_active_parent, windowID_active):
     CONFIGURE_NOTIFY = Xlib.X.ConfigureNotify
     KEY_RELEASE = Xlib.X.KeyRelease
 
-    tile_windows()
+    tile_windows(window_active)
     while True:
         event = disp.next_event()  # sleep until an event occurs
 
@@ -1673,9 +1675,9 @@ def run(window_active, window_active_parent, windowID_active):
                           f'{["", ", num. windows changed"][numWindowsChanged]}')
 
             if desktopList:
-                tile_windows(False, None, desktopList)
+                tile_windows(window_active, False, None, desktopList)
             elif numWindowsChanged:
-                tile_windows()
+                tile_windows(window_active)
             else:
                 # The number of windows has not changed, neither the desktop,
                 # but another window is active.  So if the maximize-'tiler'
@@ -1683,7 +1685,7 @@ def run(window_active, window_active_parent, windowID_active):
                 try:
                     currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
                     if tilingInfo['tiler'][currentDesktop] == 5:
-                        tile_windows(False, 0)  # maximize active window
+                        tile_windows(window_active, False, 0)  # maximize active window
                 except:
                     pass
         elif event.type == CONFIGURE_NOTIFY and event.window == window_active_parent:
