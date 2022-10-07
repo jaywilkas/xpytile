@@ -28,7 +28,7 @@ Config-file
 Pure Python, easily hackable
 
 ### New features
-Dragging a window with the mouse slightly over the left or the top border of the workspace
+Dragging a window with the mouse slightly over the left or the top or bottom border of the workspace
 triggers a re-tiling. So the window positions can be changed / swapped by dragging a window.
 Option to set the mouse-cursor in the middle of the new active window, when changed by hotkey.
 &nbsp; &nbsp; _This visual feedback is helpful, especially when the window decoration is turned off._
