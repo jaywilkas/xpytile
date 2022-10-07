@@ -1692,6 +1692,14 @@ def run(window_active, window_active_parent, windowID_active):
             moved_border = get_moved_border(windowID_active, window_active)
             if moved_border:
                 resize_docked_windows(windowID_active, window_active, moved_border)
+            else:
+                geometry = get_window_geometry(window_active)
+                workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
+                if geometry.x <= -20 or geometry.y <= -20 \
+                        or geometry.x + geometry.width > workAreaWidth + 20 \
+                        or geometry.y + geometry.height > workAreaHeight + 20:
+                    tile_windows(window_active)
+                    time.sleep(0.1)
             update_windows_info()
         elif event.type == KEY_RELEASE:
             windowID_active, window_active = handle_key_event(event.detail, windowID_active, window_active)
