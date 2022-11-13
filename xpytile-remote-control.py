@@ -1,0 +1,57 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""
+Remote control script for xpytile
+
+Sends an event with a command number to xpytile.
+The list of command-numbers can be found in xpytilerc in section hotkeys.
+
+
+
+Copyright (C) 2021  jaywilkas  <just4 [period] gmail [at] web [period] de>
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
+import sys
+import Xlib.display
+import Xlib.X
+import Xlib.protocol
+
+
+if len(sys.argv) != 2:
+    print('missing command number')
+    sys.exit(1)
+
+cmd = sys.argv[1]
+try:
+    cmdNum = int(cmd)
+except ValueError:
+    print('invalid command number')
+    sys.exit(1)
+
+
+disp = Xlib.display.Display()
+screen = disp.screen()
+Xroot = screen.root
+
+XPYTILE_REMOTE = disp.intern_atom("_XPYTILE_REMOTE")
+data = (32, [cmdNum, 0,0,0,0])
+
+clientMessage = Xlib.protocol.event.ClientMessage(window=Xroot, client_type=XPYTILE_REMOTE, data=data)
+mask = mask=(Xlib.X.SubstructureRedirectMask | Xlib.X.SubstructureNotifyMask)
+Xroot.send_event(clientMessage, event_mask=mask)
+
+disp.flush()

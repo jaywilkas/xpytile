@@ -1,6 +1,6 @@
 # xpytile
 
-**Tiling** and **simultaneous resizing** of side-by-side windows _(not only)_ for Xfce.  
+**Tiling** and **simultaneous resizing** of side-by-side windows _(theoretically not only)_ for Xfce.  
 Tested with Xfce, it should work with any window manager compliant to the EWMH standard.  
 
 
@@ -21,6 +21,7 @@ Hotkeys for:
  - Swap windows  
  - Set/unset window decoration  
 
+The tiler can be controlled remotely.  
 All settings are workspace specific.  
 So for each workspace you can choose independently, if tiling is enabled and which tiler should be used.  
 No limit of supported workspaces  
@@ -28,6 +29,7 @@ Config-file
 Pure Python, easily hackable  
 
 ### New features
+Can be controlled remotely.  
 Dragging a window with the mouse slightly over the left or the top or bottom border of the workspace  
 triggers a re-tiling. So the window positions can be changed / swapped by dragging a window.  
 Option to set the mouse-cursor in the middle of the new active window, when changed by hotkey.  

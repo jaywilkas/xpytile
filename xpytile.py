@@ -355,6 +355,43 @@ def handle_key_event(keyCode, windowID_active, window_active):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def handle_remote_control_event(event, windowID_active, window_active):
+    """
+    Perform the action associated with the command-number, given in the event details
+
+    :param event:            The remote control event
+    :param windowID_active:  ID of active window
+    :param window_active:    active window
+    :return:                 windowID_active, window_active
+    """
+
+    cmdNum = event._data['data'][1].tolist()[0]
+    cmdList= ('toggleresize',                    'toggletiling',                     #  0,  1
+              'toggleresizeandtiling',           'togglemaximizewhenonewindowleft',  #  2,  3
+              'toggledecoration',                'cyclewindows',                     #  4,  5
+              'cycletiler',                      'swapwindows',                      #  6,  7
+              'storecurrentwindowslayout',       'recreatewindowslayout',            #  8,  9
+              'tilemasterandstackvertically',    'tilevertically',                   # 10, 11
+              'tilemasterandstackhorizontally',  'tilehorizontally',                 # 12, 13
+              'tilemaximize',                    'increasemaxnumwindows',            # 14, 15
+              'decreasemaxnumwindows',           'exit',                             # 16, 17
+              'logactivewindow',                 'shrinkmaster',                     # 18, 19
+              'enlargemaster',                   'focusleft',                        # 20, 21
+              'focusright',                      'focusup',                          # 22, 23
+              'focusdown')                                                           # 24
+    cmd = cmdList[cmdNum]
+
+    # simply re-use function handle_key_event() here
+    try:
+        keyCode = hotkeys[cmd]
+        windowID_active, window_active = handle_key_event(keyCode, windowID_active, window_active)
+    except IndexError:
+        pass
+
+    return windowID_active, window_active
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def hightlight_mouse_cursor():
     """
     Highlight mouse cursor,  by hiding/showing several times
@@ -388,6 +425,7 @@ def init(configFile='~/.config/xpytilerc'):
     global NET_ACTIVE_WINDOW, NET_WM_DESKTOP, NET_CLIENT_LIST, NET_CURRENT_DESKTOP, NET_WM_STATE_MAXIMIZED_VERT
     global NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, NET_WM_STATE_HIDDEN, NET_WORKAREA, NET_WM_NAME, NET_WM_STATE_MODAL
     global NET_WM_STATE_STICKY, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
+    global XPYTILE_REMOTE
 
     disp = Xlib.display.Display()
     screen = disp.screen()
@@ -407,6 +445,7 @@ def init(configFile='~/.config/xpytilerc'):
     NET_WM_STATE_STICKY = disp.get_atom('_NET_WM_STATE_STICKY')
     MOTIF_WM_HINTS = disp.get_atom('_MOTIF_WM_HINTS')
     ANY_PROPERTYTYPE = Xlib.X.AnyPropertyType
+    XPYTILE_REMOTE = disp.get_atom('_XPYTILE_REMOTE')
 
     config = configparser.ConfigParser()
     config.read(os.path.expanduser(configFile))
@@ -1646,7 +1685,7 @@ def run(window_active, window_active_parent, windowID_active):
     :return:
     """
     global disp, Xroot, NET_ACTIVE_WINDOW, NET_WM_DESKTOP, windowsInfo, tilingInfo, verbosityLevel
-    global ANY_PROPERTYTYPE, NET_CURRENT_DESKTOP
+    global ANY_PROPERTYTYPE, NET_CURRENT_DESKTOP, XPYTILE_REMOTE
 
     PROPERTY_NOTIFY = Xlib.X.PropertyNotify
     CONFIGURE_NOTIFY = Xlib.X.ConfigureNotify
@@ -1656,7 +1695,12 @@ def run(window_active, window_active_parent, windowID_active):
     while True:
         event = disp.next_event()  # sleep until an event occurs
 
-        if event.type == PROPERTY_NOTIFY and event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
+        if event.type == Xlib.X.ClientMessage and event._data['client_type'] == XPYTILE_REMOTE:
+            windowID_active, window_active = handle_remote_control_event(event, windowID_active, window_active)
+            #cmdNum = event._data['data'][1].tolist()[0]
+            #print(cmdNum)
+
+        elif event.type == PROPERTY_NOTIFY and event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
             # the active window or the desktop has changed
             numWindowsChanged, desktopList = update_windows_info()
             windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
@@ -1705,7 +1749,7 @@ def run(window_active, window_active_parent, windowID_active):
             windowID_active, window_active = handle_key_event(event.detail, windowID_active, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
 
-
+# ----------------------------------------------------------------------------------------------------------------------
 def main():
     configFile = 'xpytilerc'
     configPath = os.getenv('XDG_CONFIG_HOME')
@@ -1758,7 +1802,7 @@ def main():
     except:
         # Something went wrong, write traceback info in /tmp
         write_crashlog()
-
+# ----------------------------------------------------------------------------------------------------------------------
 
 if __name__ == '__main__':
     main()

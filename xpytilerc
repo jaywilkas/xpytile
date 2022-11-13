@@ -145,121 +145,153 @@ maximizeWhenOneWindowLeft = True
 # Keycodes of the hotkeys
 # (The programm  xev  helps to figure them out.
 #  testModifier.py can be used to get the modifier-code.)
+#
+#
+# These actions can also be triggered by sending an X-message with xpytile-remote-client.py
+# I.e.   ./xpytile-remote-client.py 4
+#         sends command-number 4 to xpytile - this number is associated with toggleDecoration
+# The associated command-numbers are hard-coded and can NOT be configured here.
+#
 [Hotkeys]
 # -----------------------------------------------------------------------------------------------------
 # Hotkey modifier
 # 64: "Super_L"
 # -1: any modifier
-modifier = 80
+modifier = 64
+
 
 # toggle the status of the current desktop
 # whether to simultaneously resize docked windows
 # 24: "q"
 toggleResize = 24
+# command-number 0
 
 # toggle the status of the current desktop
 # whether tiling is active
 # 25: "w"
 toggleTiling = 25
+# command-number 1
 
 # toggle the status of the current desktop
 # whether to simultaneously resize docked windows
 # and whether tiling is active
 # 26: "e"
 toggleResizeAndTiling = 26
+# command-number 2
 
 # toggle the status of the current desktop
 # whether to maximize the last window
 # when the 2nd last window got closed
 # 27: "r"
 toggleMaximizeWhenOneWindowLeft = 27
+# command-number 3
 
 # toggle the status of the current desktop
 # whether to decorate the tiled windows
 # 52: "y"
 toggleDecoration = 52
+# command-number 4
 
 # cycle all -not minimized- windows on the current desktop
 # 49: ^
 cycleWindows = 49
+# command-number 5
 
 # cycle tiler
 # 54: 'c'
 cycleTiler = 54
+# command-number 6
 
 # swap active window with the top most- / left- one
 # 9: ESC
 swapWindows = 9
+# command-number 7
 
 # store the layout of the windows on the current desktop
 # 15: "6"
 storeCurrentWindowsLayout = 15
+# command-number 8
 
 # restore the layout of the windows geometry on the current desktop
 # 14: "5"
 recreateWindowsLayout = 14
+# command-number 9
 
 # switch to tiler "masterAndStackVertic" and do the tiling
 # 10: "1"
 tileMasterAndStackVertically = 10
+# command-number 10
 
 # switch to tiler "vertically" and do the tiling
 # 11: "2"
 tileVertically = 11
+# command-number 11
 
 # switch to tiler "masterAndStackHoriz" and do the tiling
 # 12: "3"
 tileMasterAndStackHorizontally = 12
+# command-number 12
 
 # switch to tiler "horizontally" and do the tiling
 # 13: "4"
 tileHorizontally = 13
+# command-number 13
 
 # switch to tiler "maximize" and maximize the window
 # 19: "0"
 tileMaximize = 19
+# command-number 14
 
 # increase max number of windows to tile
 # 58 "m"
 increaseMaxNumWindows = 58
+# command-number 15
 
 # decrease max number of windows to tile
 # 57 "n"
 decreaseMaxNumWindows = 57
+# command-number 16
 
 # exit the tiling helper
 # 61: "-"
 exit = 61
+# command-number 17
 
 # log name and tile of currently active window
 # in /tmp/xpytile_<USERNAME>.log
 # 60: '.'
 logActiveWindow = 60
+# command-number 18
 
 # shrink width/height of master window and (re-)tile
 # 38: "a"
 shrinkMaster = 38
+# command-number 19
 
 # enlarge width/height of master window and (re-)tile
 # 39: "s"
 enlargeMaster = 39
+# command-number 20
 
 # make left window the active one
 # 113 "arrow-left"
 focusLeft = 113
+# command-number 21
 
 # make right window the active one
 # 114 "arrow-right"
 focusRight = 114
+# command-number 22
 
 # make upper window the active one
 # 111 "arrow-up"
 focusUp = 111
+# command-number 23
 
 # make lower window the active one
 # 116 "arrow-down"
 focusDown = 116
-
+# command-number 24
 
 # -----------------------------------------------------------------------------------------------------
 # Notifications are send (if turned on) on start-up
