@@ -5,7 +5,7 @@ Tested with Xfce, it should work with any window manager compliant to the EWMH s
 
 
 # Purpose
-A Python script to auto-tile and to simultaneously resize docked windows.  
+A Python script to auto-tile and to simultaneously resize docked windows for Xfce.  
 
 
 ## Features:
