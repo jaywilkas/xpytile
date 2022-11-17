@@ -93,6 +93,7 @@ def change_num_max_windows_by(deltaNum):
         return
 
     tilingInfo[tilerName]['maxNumWindows'] = min(max(tilingInfo[tilerName]['maxNumWindows'] + deltaNum, 2), 9)
+    notify(tilingInfo[tilerName]['maxNumWindows'])
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -722,16 +723,21 @@ def notify(case, status=None):
     if not notificationInfo['active']:
         return
 
-    case = case.lower()
-    if status is not None:
-        message = [notificationInfo['off_message'], notificationInfo['on_message']][int(status)]
-        status_str = ['off', 'on'][int(status)]
+    if isinstance(case, int):
+        summary = 'Num win handled'
+        message = str(case)
+        iconFilePath = ''
     else:
-        message = notificationInfo[f'{case}_message']
-        status_str = ''
+        case = case.lower()
+        if status is not None:
+            message = [notificationInfo['off_message'], notificationInfo['on_message']][int(status)]
+            status_str = ['off', 'on'][int(status)]
+        else:
+            message = notificationInfo[f'{case}_message']
+            status_str = ''
 
-    iconFilePath = notificationInfo[f'{case}{status_str}_icon']
-    summary = notificationInfo[f'{case}_summary']
+        iconFilePath = notificationInfo[f'{case}{status_str}_icon']
+        summary = notificationInfo[f'{case}_summary']
 
     try:
         subprocess.Popen(['notify-send', '-t', notificationInfo['time'],
