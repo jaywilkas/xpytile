@@ -94,11 +94,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # Questions
 *(Q)* Are gaps supported?  
 *(A)* Nope  
+
 *(Q)* Does xpytile support multiple monitor setups?  
 *(A)* On workspaces that span multiple monitors, simultaneous resizing works fine, tiling not really.  
  
 *(Q)* How do I get the exact name and title of a window I want xpytile to ignore?  
 *(A)* Run xpyile with -v _or -vv_  or use the hotkey to log name and title of the current window.  
+
 *(Q)* What can I do, xptile isn't picking up my hotkeys?  
 *(A)* Run ```./getModifierCode.py```, press ```Super_L - 1``` _(or the modifier you'd like to use)_  
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and check/edit ```xpytilerc``` _(line: modifier = )_  
