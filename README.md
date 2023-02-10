@@ -19,7 +19,8 @@ Hotkeys for:
  - Cycling windows  
  - Swap windows  
  - Set/unset window decoration  
-
+ - and more, see below  
+ 
 The tiler can be controlled remotely.  
 All settings are workspace specific.  
 So for each workspace you can choose independently, if tiling is enabled and which tiler should be used.  
