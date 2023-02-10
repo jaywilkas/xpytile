@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Remote control script for xpytile
+Demo remote control script for xpytile
 
 Sends an event with a command number to xpytile.
-The list of command-numbers can be found in xpytilerc in section hotkeys.
+The list of command-numbers can also be found
+in xpytilerc in section hotkeys.
 
 
 
@@ -25,10 +26,41 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+
 import sys
 import Xlib.display
 import Xlib.X
 import Xlib.protocol
+
+
+# ----------------------------------------------------------------------------------------------------------------------
+# no. command
+#  0  toggleResize
+#  1  toggleTiling
+#  2  toggleResizeAndTiling
+#  3  toggleMaximizeWhenOneWindowLeft
+#  4  toggleDecoration
+#  5  cycleWindows
+#  6  cycleTiler
+#  7  swapWindows
+#  8  storeCurrentWindowsLayout
+#  9  recreateWindowsLayout
+# 10  tileMasterAndStackVertically
+# 11  tileVertically
+# 12  tileMasterAndStackHorizontally
+# 13  tileHorizontally
+# 14  tileMaximize
+# 15  increaseMaxnumWindows
+# 16  decreaseMaxnumWindows
+# 17  exit
+# 18  logactiveWindow
+# 19  shrinkMaster
+# 20  enlargeMaster
+# 21  focusLeft
+# 22  focusRight
+# 23  focusUp
+# 24  focusDown
+# ----------------------------------------------------------------------------------------------------------------------
 
 
 if len(sys.argv) != 2:
@@ -53,5 +85,4 @@ data = (32, [cmdNum, 0,0,0,0])
 clientMessage = Xlib.protocol.event.ClientMessage(window=Xroot, client_type=XPYTILE_REMOTE, data=data)
 mask = mask=(Xlib.X.SubstructureRedirectMask | Xlib.X.SubstructureNotifyMask)
 Xroot.send_event(clientMessage, event_mask=mask)
-
-disp.flush()
+disp.sync()
