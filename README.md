@@ -93,7 +93,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.  
 # Questions
 *(Q)* Are gaps supported?  
-*(A)* Nope  
+*(A)* Nope, but you could use an Xfce theme with gaps.  
 
 *(Q)* Does xpytile support multiple monitor setups?  
 *(A)* On workspaces that span multiple monitors, simultaneous resizing works fine, tiling not really.  
