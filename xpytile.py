@@ -343,6 +343,8 @@ def handle_key_event(keyCode, windowID_active, window_active):
         windowID_active, window_active = set_window_focus(windowID_active, window_active, 'left')
     elif keyCode == hotkeys['focusright']:
         windowID_active, window_active = set_window_focus(windowID_active, window_active, 'right')
+    elif keyCode == hotkeys['focusprevious']:
+        windowID_active, window_active = set_window_focus_to_previous(windowID_active, window_active)
     elif keyCode == hotkeys['exit']:
         # On exit, make sure all windows are decorated
         update_windows_info()
@@ -379,7 +381,7 @@ def handle_remote_control_event(event, windowID_active, window_active):
               'logactivewindow',                 'shrinkmaster',                     # 18, 19
               'enlargemaster',                   'focusleft',                        # 20, 21
               'focusright',                      'focusup',                          # 22, 23
-              'focusdown')                                                           # 24
+              'focusdown',                       'focusprevious')                    # 24, 25
     cmd = cmdList[cmdNum]
 
     # simply re-use function handle_key_event() here
@@ -454,14 +456,14 @@ def init(configFile='~/.config/xpytilerc'):
     init_hotkeys_info(config)
     init_notification_info(config)
 
-    # dictionary to keep track of the windows, their geometry and other information
-    windowsInfo = dict()
-    update_windows_info()
-
     # determine active window and its parent
     window_active = disp.get_input_focus().focus
     windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
     window_active_parent = get_parent_window(window_active)
+
+    # dictionary to keep track of the windows, their geometry and other information
+    windowsInfo = dict()
+    update_windows_info(windowID_active)
 
     # configure event-mask
     Xroot.change_attributes(event_mask=Xlib.X.PropertyChangeMask | Xlib.X.SubstructureNotifyMask |
@@ -1026,6 +1028,60 @@ def set_window_focus(windowID_active, window_active, direction='left'):
         # update windowID_active and window_active, to inform function run()
         windowID_active = winID_next
         window_active = disp.create_resource_object('window', windowID_active)
+        # time when currently active window got focussed
+        windowsInfo[windowID_active]['time'] = datetime.datetime.now()
+
+    return windowID_active, window_active
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def set_window_focus_to_previous(windowID_active, window_active):
+    """
+    Make another window the active one.
+    Move the focus from the currently active window to the previously focussed one.
+    Place the mouse-cursor in the middle of the new window, if the active window gets changed and the respective
+    option is set.
+
+    :param windowID_active:  ID of active window
+    :param window_active:    active window
+    :return:                 windowID_active, window_active
+    """
+    global windowsInfo, tilingInfo, disp, Xroot
+
+    # get a list of all -not minimized and not ignored- windows of the current desktop
+    desktop = windowsInfo[windowID_active]['desktop']
+    winIDs = get_windows_on_desktop(desktop)
+
+    if len(winIDs) < 2:
+        return windowID_active, window_active
+
+    winID_next = None
+    t_best = 0
+
+    # iterate over all windows on the current desktop
+    # and find the previously focussed one
+    for winID in winIDs:
+        if winID == windowID_active:
+            continue
+        if windowsInfo[winID]['time'] > t_best:
+            t_best = windowsInfo[winID]['time']
+            winID_next = winID
+
+    if winID_next:
+        # set focus and make sure the window is in foreground
+        windowsInfo[winID_next]["win"].set_input_focus(Xlib.X.RevertToParent, 0)
+        windowsInfo[winID_next]["win"].configure(stack_mode=Xlib.X.Above)
+        # place mouse-cursor in the middle of the new active window (if this option is activated)
+        if tilingInfo['moveMouseIntoActiveWindow']:
+            x = int((windowsInfo[winID_next]['x'] + windowsInfo[winID_next]['x2']) / 2)
+            y = int((windowsInfo[winID_next]['y'] + windowsInfo[winID_next]['y2']) / 2)
+            Xlib.ext.xtest.fake_input(disp, Xlib.X.MotionNotify, x=x, y=y)
+            hightlight_mouse_cursor()
+        # update windowID_active and window_active, to inform function run()
+        windowID_active = winID_next
+        window_active = disp.create_resource_object('window', windowID_active)
+        # time when currently active window got focussed
+        windowsInfo[windowID_active]['time'] = datetime.datetime.now()
 
     return windowID_active, window_active
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1578,11 +1634,12 @@ def unmaximize_window(window):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def update_windows_info():
+def update_windows_info(windowID_active=None):
     """
     Update the dictionary containing all windows, parent-windows, names, desktop-number and geometry.
     Windows with names / titles that match the ignore-list and modal and sticky windows are not taken into account.
 
+    :param window_active:     active windo
     :return: status           whether the number of windows has changed,  and
              desktopList      list of desktops, when a window got moved from one desktop to another
     """
@@ -1657,6 +1714,13 @@ def update_windows_info():
         except:
             pass  # window has vanished
 
+    # time when currently active window got focussed
+    if windowID_active is not None:
+        try:
+            windowsInfo[windowID_active]['time'] = time.time()
+        except KeyError:
+            pass
+
     if doDelay:
         time.sleep(tilingInfo['delayTimeTiling'])
 
@@ -1682,7 +1746,7 @@ def write_crashlog():
 # ----------------------------------------------------------------------------------------------------------------------
 def run(window_active, window_active_parent, windowID_active):
     """
-    Waits for events (change of active window, hotkeys)
+    Waits for events (change of active window, window-resizing, hotkeys, remote-control-event)
     and resizes docked windows and does a little bit of tiling
 
     :param window_active:         active window
@@ -1703,15 +1767,12 @@ def run(window_active, window_active_parent, windowID_active):
 
         if event.type == Xlib.X.ClientMessage and event._data['client_type'] == XPYTILE_REMOTE:
             windowID_active, window_active = handle_remote_control_event(event, windowID_active, window_active)
-            #cmdNum = event._data['data'][1].tolist()[0]
-            #print(cmdNum)
-
         elif event.type == PROPERTY_NOTIFY and event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
             # the active window or the desktop has changed
-            numWindowsChanged, desktopList = update_windows_info()
             windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
             window_active = disp.create_resource_object('window', windowID_active)
             window_active_parent = get_parent_window(window_active)
+            numWindowsChanged, desktopList = update_windows_info(windowID_active)
 
             if verbosityLevel > 0:
                 if event.atom == NET_ACTIVE_WINDOW:
@@ -1719,7 +1780,6 @@ def run(window_active, window_active_parent, windowID_active):
                           f'name: "{get_windows_name(windowID_active, window_active)}"\t'
                           f'title: "{get_windows_title(window_active)}"'
                           f'{["", ", num. windows changed"][numWindowsChanged]}')
-
                 else:
                     print(f'Desktop changed'
                           f'{["", ", num. windows changed"][numWindowsChanged]}')

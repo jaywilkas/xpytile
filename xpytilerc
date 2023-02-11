@@ -27,6 +27,7 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Thunderbird" !title: ".*Mozilla Thunderbird.*"
                 name: "Doublecmd" !title: "^Double Commander "
                 name: "jetbrains-pycharm" title: "(Confirm|Tip(p){0,1}|Settings)"
+                name: "Soffice" title: "Tipp des Tages.*"
 
 
 # Delay the auto-tiling when a new application was lauched and its name
@@ -292,6 +293,11 @@ focusUp = 111
 # 116 "arrow-down"
 focusDown = 116
 # command-number 24
+
+# make the previously focussed one the active one
+# 56 "b"
+focusPrevious = 56
+# command-number 25
 
 # -----------------------------------------------------------------------------------------------------
 # Notifications are send (if turned on) on start-up
