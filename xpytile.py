@@ -1063,9 +1063,12 @@ def set_window_focus_to_previous(windowID_active, window_active):
     for winID in winIDs:
         if winID == windowID_active:
             continue
-        if windowsInfo[winID]['time'] > t_best:
-            t_best = windowsInfo[winID]['time']
-            winID_next = winID
+        try:
+            if windowsInfo[winID]['time'] > t_best:
+                t_best = windowsInfo[winID]['time']
+                winID_next = winID
+        except KeyError:
+            pass
 
     if winID_next:
         # set focus and make sure the window is in foreground
