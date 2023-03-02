@@ -60,7 +60,7 @@ Most important hotkeys _(full set see config-file)_:
 ```Super_L - m``` &nbsp; &nbsp; &nbsp; &nbsp; increment number of max. tiled windows for active tiler  
 ```Super_L - n``` &nbsp; &nbsp; &nbsp; &nbsp; decrement number of max. tiled windows for active tiler  
 ```Super_L - arrow``` &nbsp;focus next adjacent window in the given direction  
-```Super_L - b``` &nbsp;focus previously active window  
+```Super_L - b``` &nbsp; &nbsp; &nbsp; &nbsp; focus previously active window  
 ```Super_L - .``` &nbsp; &nbsp; &nbsp; &nbsp; log name & tile of active window in ```/tmp/xpytile_<USERNAME>.log```  
 ```Super_L - -``` &nbsp; &nbsp; &nbsp; &nbsp; exit  
 *) Hint: In XFCE one can resize windows with ```Alt - Right-Click``` and drag,  
