@@ -214,7 +214,7 @@ def get_windows_name(winID, window):
     except KeyError:
         try:
             wmclass, name = window.get_wm_class()
-        except TypeError:
+        except (TypeError, KeyError):
             name = "UNKNOWN"
 
     return name
@@ -1067,7 +1067,7 @@ def set_window_focus_to_previous(windowID_active, window_active):
             if windowsInfo[winID]['time'] > t_best:
                 t_best = windowsInfo[winID]['time']
                 winID_next = winID
-        except KeyError:
+        except (KeyError, TypeError):
             pass
 
     if winID_next:
@@ -1770,6 +1770,7 @@ def run(window_active, window_active_parent, windowID_active):
 
         if event.type == Xlib.X.ClientMessage and event._data['client_type'] == XPYTILE_REMOTE:
             windowID_active, window_active = handle_remote_control_event(event, windowID_active, window_active)
+
         elif event.type == PROPERTY_NOTIFY and event.atom in [NET_ACTIVE_WINDOW, NET_CURRENT_DESKTOP]:
             # the active window or the desktop has changed
             windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
@@ -1801,11 +1802,22 @@ def run(window_active, window_active_parent, windowID_active):
                         tile_windows(window_active, False, 0)  # maximize active window
                 except:
                     pass
+
+        elif event.type == PROPERTY_NOTIFY:
+            # The number of windows has changed but not the active window (?)
+            # This happens when XFCE is configured to not automatically focus new windows.
+            numWindowsChanged, _ = update_windows_info(windowID_active)
+            if numWindowsChanged:
+                if verbosityLevel > 0:
+                    print('num. windows changed')
+                tile_windows(window_active)
+
         elif event.type == CONFIGURE_NOTIFY and event.window == window_active_parent:
             moved_border = get_moved_border(windowID_active, window_active)
             if moved_border:
                 resize_docked_windows(windowID_active, window_active, moved_border)
             else:
+                # A window was moved. Check whether its new position should trigger re-tiling.
                 geometry = get_window_geometry(window_active)
                 workAreaWidth, workAreaHeight = Xroot.get_full_property(NET_WORKAREA, 0).value.tolist()[2:4]
                 if geometry.x <= -20 or geometry.y <= -20 \
@@ -1814,12 +1826,14 @@ def run(window_active, window_active_parent, windowID_active):
                     tile_windows(window_active)
                     time.sleep(0.1)
             update_windows_info()
+
         elif event.type == KEY_RELEASE:
             windowID_active, window_active = handle_key_event(event.detail, windowID_active, window_active)
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
 def main():
+    # --- Config-file ---
     configFile = 'xpytilerc'
     configPath = os.getenv('XDG_CONFIG_HOME')
     if configPath:
@@ -1830,11 +1844,13 @@ def main():
     # If there is no user-specific config-file, try to copy it from /etc
     if not os.path.exists(os.path.expanduser(configFilePath)):
         try:
-            shutil.copyfile('/etc/xpytilerc', os.path.expanduser(configFilePath))
+            shutil.copyfile(os.path.join('/etc', configFile), os.path.expanduser(configFilePath))
         except:
             write_crashlog()
             raise SystemExit('No config-file found')
 
+
+    # --- Command line arguments ---
     global verbosityLevel
     parser = argparse.ArgumentParser(prog='xpytile.py')
     parser.add_argument('-v', '--verbose', action="store_true", help='Print name and title of new windows')
@@ -1848,7 +1864,8 @@ def main():
     else:
         verbosityLevel = 0
 
-    # Create singleton using abstract socket (prefix with \0)
+
+    # --- Create singleton using abstract socket (prefix with \0) ---
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.bind('\0xpytile_lock')
@@ -1859,6 +1876,8 @@ def main():
         notify('alreadyRunning')
         raise SystemExit('xpytile already running, exiting.')
 
+
+    # --- Do the actual work ---
     try:
         # Initialize
         window_active, window_active_parent, windowID_active = init(configFilePath)
