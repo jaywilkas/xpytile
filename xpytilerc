@@ -28,6 +28,8 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Doublecmd" !title: "^Double Commander "
                 name: "jetbrains-pycharm" title: "(Confirm|Tip(p){0,1}|Settings)"
                 name: "Soffice" title: "Tipp des Tages.*"
+                name: "ulauncher"
+                name: "rofi"
 
 
 # Delay the auto-tiling when a new application was lauched and its name
