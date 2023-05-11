@@ -102,7 +102,7 @@ def cycle_windows():
     Cycles all -not minimized- windows of the current desktop
     :return:
     """
-    global disp, Xroot, NET_CURRENT_DESKTOP
+    global disp, Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
 
     # get a list of all -not minimized and not ignored- windows of the current desktop
     currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
@@ -214,7 +214,7 @@ def get_windows_name(winID, window):
     except KeyError:
         try:
             wmclass, name = window.get_wm_class()
-        except (TypeError, KeyError):
+        except (TypeError, KeyError, Xlib.error.BadWindow):
             name = "UNKNOWN"
 
     return name
@@ -345,6 +345,14 @@ def handle_key_event(keyCode, windowID_active, window_active):
         windowID_active, window_active = set_window_focus(windowID_active, window_active, 'right')
     elif keyCode == hotkeys['focusprevious']:
         windowID_active, window_active = set_window_focus_to_previous(windowID_active, window_active)
+    elif keyCode == hotkeys['togglegroup0']:
+        toggle_group(windowID_active, 0)
+    elif keyCode == hotkeys['showgroup0']:
+        windowID_active, window_active = show_group(0)
+    elif keyCode == hotkeys['togglegroup1']:
+        toggle_group(windowID_active, 1)
+    elif keyCode == hotkeys['showgroup1']:
+        windowID_active, window_active = show_group(1)
     elif keyCode == hotkeys['exit']:
         # On exit, make sure all windows are decorated
         update_windows_info()
@@ -356,6 +364,49 @@ def handle_key_event(keyCode, windowID_active, window_active):
 
     return windowID_active, window_active
 # ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def toggle_group(windowID_active, group):
+    global windowsInfo
+
+    if group in windowsInfo[windowID_active]['groups']:
+        windowsInfo[windowID_active]['groups'].remove(group)
+    else:
+        windowsInfo[windowID_active]['groups'].append(group)
+
+    #windowID_active, window_active = show_group(group)
+
+    print(windowsInfo[windowID_active]['name'], windowsInfo[windowID_active]['groups'])
+
+    #return windowID_active, window_active
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
+def show_group(group):
+    global windowsInfo, disp, Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
+
+    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
+    for winID, winInfo in windowsInfo.items():
+        try:
+            if winInfo['desktop'] == currentDesktop:
+                propertyList = winInfo['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
+                if NET_WM_STATE_STICKY not in propertyList:
+                    if group in winInfo['groups']:
+                        set_window_minimized_state(winInfo['win'], 0)
+                        print(winInfo['name'], 0)
+                    else:
+                        set_window_minimized_state(winInfo['win'], 1)
+                        print(winInfo['name'], 1)
+        except Xlib.error.BadWindow:
+            pass  # window vanished
+    time.sleep(0.2)
+    window_active = disp.get_input_focus().focus
+    tile_windows(window_active, manuallyTriggered=True)
+    windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
+
+    return windowID_active, window_active
+# ----------------------------------------------------------------------------------------------------------------------
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 def handle_remote_control_event(event, windowID_active, window_active):
@@ -381,7 +432,10 @@ def handle_remote_control_event(event, windowID_active, window_active):
               'logactivewindow',                 'shrinkmaster',                     # 18, 19
               'enlargemaster',                   'focusleft',                        # 20, 21
               'focusright',                      'focusup',                          # 22, 23
-              'focusdown',                       'focusprevious')                    # 24, 25
+              'focusdown',                       'focusprevious',                    # 24, 25
+              'togglegroup0',                    'showgroup0',                       # 26, 27
+              'togglegroup1',                    'showgroup1')                       # 28, 29
+
     cmd = cmdList[cmdNum]
 
     # simply re-use function handle_key_event() here
@@ -427,7 +481,7 @@ def init(configFile='~/.config/xpytilerc'):
     global windowsInfo
     global NET_ACTIVE_WINDOW, NET_WM_DESKTOP, NET_CLIENT_LIST, NET_CURRENT_DESKTOP, NET_WM_STATE_MAXIMIZED_VERT
     global NET_WM_STATE_MAXIMIZED_HORZ, NET_WM_STATE, NET_WM_STATE_HIDDEN, NET_WORKAREA, NET_WM_NAME, NET_WM_STATE_MODAL
-    global NET_WM_STATE_STICKY, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
+    global NET_WM_STATE_STICKY, MOTIF_WM_HINTS, ANY_PROPERTYTYPE, GTK_FRAME_EXTENTS
     global XPYTILE_REMOTE
 
     disp = Xlib.display.Display()
@@ -447,6 +501,7 @@ def init(configFile='~/.config/xpytilerc'):
     NET_WM_STATE_MODAL = disp.get_atom('_NET_WM_STATE_MODAL')
     NET_WM_STATE_STICKY = disp.get_atom('_NET_WM_STATE_STICKY')
     MOTIF_WM_HINTS = disp.get_atom('_MOTIF_WM_HINTS')
+    GTK_FRAME_EXTENTS = disp.get_atom('_GTK_FRAME_EXTENTS')
     ANY_PROPERTYTYPE = Xlib.X.AnyPropertyType
     XPYTILE_REMOTE = disp.get_atom('_XPYTILE_REMOTE')
 
@@ -932,10 +987,15 @@ def set_window_decoration(winID, status):
     :param status:  controls whether to show the decoration (True | False)
     :return:
     """
-    global windowsInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE
+    global windowsInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE, GTK_FRAME_EXTENTS
 
     try:
         window = windowsInfo[winID]['win']
+
+        # Don't change the decoration, if this window has CSD (client-side-decoration)
+        if window.get_property(GTK_FRAME_EXTENTS, ANY_PROPERTYTYPE, 0, 32) is not None:
+            return
+
         if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
             hints = result.value
             if hints[2] == int(status):
@@ -1090,6 +1150,24 @@ def set_window_focus_to_previous(windowID_active, window_active):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
+def set_window_minimized_state(window, state):
+    """
+    Minimize or un-minimize the given window
+
+    :param window:  the window
+    :param state:   1: minimize,  0: un-minimize
+    :return:
+    """
+    global Xroot, disp, NET_WM_STATE_HIDDEN, NET_WM_STATE
+
+    mask = (Xlib.X.SubstructureRedirectMask | Xlib.X.SubstructureNotifyMask)
+    event = Xlib.protocol.event.ClientMessage(window=window, client_type=NET_WM_STATE,
+                                              data=(32, [state, NET_WM_STATE_HIDDEN, 0, 1, 0]))
+    Xroot.send_event(event, event_mask=mask)
+    disp.flush()
+# ----------------------------------------------------------------------------------------------------------------------
+
+# ----------------------------------------------------------------------------------------------------------------------
 def set_window_position(winID, **kwargs):
     """
     Sets the position of the window.
@@ -1223,7 +1301,7 @@ def tile_windows(window_active, manuallyTriggered=False, tilerNumber=None, deskt
         if manuallyTriggered:
             if tilerNumber == 'next':
                 tilingInfo['tiler'][desktop] = [2,3,4,5,1][tilingInfo['tiler'][desktop]-1]
-            else:
+            elif tilerNumber is not None:
                 tilingInfo['tiler'][desktop] = tilerNumber
 
         if resizeMaster != 0 and tilingInfo['tiler'][desktop] not in [1, 3]:
@@ -1697,6 +1775,7 @@ def update_windows_info(windowID_active=None):
                     windowsInfo[winID]['win'] = win
                     windowsInfo[winID]['winParent'] = get_parent_window(win)
                     windowsInfo[winID]['winSetXY'] = None
+                    windowsInfo[winID]['groups'] = [0]
                     numWindowsChanged = True
                     if match(tilingInfo['delayTilingWindowsWithNames'], name):
                         doDelay = True  # An app, that needs some delay, got launched
