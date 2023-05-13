@@ -345,7 +345,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
         windowID_active, window_active = set_window_focus(windowID_active, window_active, 'right')
     elif keyCode == hotkeys['focusprevious']:
         windowID_active, window_active = set_window_focus_to_previous(windowID_active, window_active)
-    elif keyCode == hotkeys['togglegroup0']:
+    elif keyCode == hotkeys['togglegroup0']:  # handling groups of windows is under development
         toggle_group(windowID_active, 0)
     elif keyCode == hotkeys['showgroup0']:
         windowID_active, window_active = show_group(0)
@@ -367,6 +367,7 @@ def handle_key_event(keyCode, windowID_active, window_active):
 
 # ----------------------------------------------------------------------------------------------------------------------
 def toggle_group(windowID_active, group):
+    # handling groups of windows is under development
     global windowsInfo
 
     if group in windowsInfo[windowID_active]['groups']:
@@ -626,6 +627,13 @@ def init_tiling_info(config):
         entry = parseConfigIgnoreWindowEntry(line)
         if entry is not None:
             tilingInfo['ignoreWindows'].append(entry)
+
+    #   ... what windows should be ignored regarding (un)decoratating depending on their name and title.
+    tilingInfo['ignoreWindowsForDecoration'] = list()
+    for line in config['General']['ignoreWindowsForDecoration'].split('\n'):
+        entry = parseConfigIgnoreWindowEntry(line)
+        if entry is not None:
+            tilingInfo['ignoreWindowsForDecoration'].append(entry)
 
     #   ... which application should be tiled after some delay, depending on their name.
     tilingInfo['delayTilingWindowsWithNames'] = list()
@@ -987,7 +995,7 @@ def set_window_decoration(winID, status):
     :param status:  controls whether to show the decoration (True | False)
     :return:
     """
-    global windowsInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE, GTK_FRAME_EXTENTS
+    global windowsInfo, tilingInfo, MOTIF_WM_HINTS, ANY_PROPERTYTYPE, GTK_FRAME_EXTENTS
 
     try:
         window = windowsInfo[winID]['win']
@@ -995,7 +1003,10 @@ def set_window_decoration(winID, status):
         # Don't change the decoration, if this window has CSD (client-side-decoration)
         if window.get_property(GTK_FRAME_EXTENTS, ANY_PROPERTYTYPE, 0, 32) is not None:
             return
-
+        if match_ignore(tilingInfo['ignoreWindowsForDecoration'],
+                        window.get_wm_class()[1], get_windows_title(window)):
+            return
+        
         if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
             hints = result.value
             if hints[2] == int(status):

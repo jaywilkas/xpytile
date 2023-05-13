@@ -31,6 +31,17 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Ulauncher"
                 name: "rofi"
 
+                
+# Don't (un)decorate windows when their name AND -if configured- title matches one of these regular expressions.
+# !title means: Ignore window when the name matches AND title does NOT match the regex.
+#   The decoration of windows with client-side decoration (CSD) should not be changed by xpytile.
+#   Windows (like Firefox, when CSD is enabled) with the property _GTK_FRAME_EXTENTS are decorated client-side
+#   and ignored by default. 
+#   But there are CSD applications (e.g. Qt apps) that lack the _GTK_FRAME_EXTENTS property and therefore
+#   CSD mode can't be detected (at least I don't know how).
+#   (Demo entry for:  "qml webbrowser.qml"   https://github.com/johanhelsing/qt-csd-demo)
+ignoreWindowsForDecoration = name: "Qml Runtime"  title: "Stack"
+
 
 # Delay the auto-tiling when a new application was lauched and its name
 # matches one of these regexes.

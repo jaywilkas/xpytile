@@ -29,6 +29,7 @@ Config-file
 Pure Python, easily hackable  
 
 ### New features
+Configurable which (CSD) applications should not be (un)decorated.  
 Hotkey to focus previously active window  
 Can be controlled remotely.  
 Dragging a window with the mouse slightly over the left or the top or bottom border of the workspace  
