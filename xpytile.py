@@ -605,9 +605,9 @@ def init_tiling_info(config):
 
         if strPos_name is not None and (strPos_title is None or strPos_title > strPos_name):
             if strPos_title is not None:
-                r = re.match('(name:\s*)(".*")(\s*)(!{0,1}title:\s*)(".*")', entry)
+                r = re.match(r'(name:\s*)(".*")(\s*)(!{0,1}title:\s*)(".*")', entry)
             else:
-                r = re.match('(name:\s*)(".*")', entry)
+                r = re.match(r'(name:\s*)(".*")', entry)
             if r:
                 retVal['name'] = re.compile(r.group(2)[1:-1])
                 if strPos_title is not None:
