@@ -238,7 +238,7 @@ def get_windows_on_desktop(desktop):
                 propertyList = windowsInfo[winID]['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
                 if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList:
                     winIDs.append(winID)
-        except Xlib.error.BadWindow:
+        except (Xlib.error.BadWindow, AttributeError):
             pass  # window vanished
 
     return winIDs
@@ -1142,7 +1142,7 @@ def set_window_position(winID, **kwargs):
         if window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32).value[2] == 0:
             windowsInfo[winID]['win'].configure(**kwargs)
             return
-    except (AttributeError, KeyError) as e:
+    except (Xlib.error.BadWindow, AttributeError, KeyError) as e:
         return  # window vanished
 
     # Window is decorated, for some windows the parent window needs to be used  -  see function set_setxy_win()
