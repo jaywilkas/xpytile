@@ -345,14 +345,6 @@ def handle_key_event(keyCode, windowID_active, window_active):
         windowID_active, window_active = set_window_focus(windowID_active, window_active, 'right')
     elif keyCode == hotkeys['focusprevious']:
         windowID_active, window_active = set_window_focus_to_previous(windowID_active, window_active)
-    elif keyCode == hotkeys['togglegroup0']:  # handling groups of windows is under development
-        toggle_group(windowID_active, 0)
-    elif keyCode == hotkeys['showgroup0']:
-        windowID_active, window_active = show_group(0)
-    elif keyCode == hotkeys['togglegroup1']:
-        toggle_group(windowID_active, 1)
-    elif keyCode == hotkeys['showgroup1']:
-        windowID_active, window_active = show_group(1)
     elif keyCode == hotkeys['exit']:
         # On exit, make sure all windows are decorated
         update_windows_info()
@@ -364,50 +356,6 @@ def handle_key_event(keyCode, windowID_active, window_active):
 
     return windowID_active, window_active
 # ----------------------------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------------------------
-def toggle_group(windowID_active, group):
-    # handling groups of windows is under development
-    global windowsInfo
-
-    if group in windowsInfo[windowID_active]['groups']:
-        windowsInfo[windowID_active]['groups'].remove(group)
-    else:
-        windowsInfo[windowID_active]['groups'].append(group)
-
-    #windowID_active, window_active = show_group(group)
-
-    print(windowsInfo[windowID_active]['name'], windowsInfo[windowID_active]['groups'])
-
-    #return windowID_active, window_active
-# ----------------------------------------------------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------------------------------------------------
-def show_group(group):
-    global windowsInfo, disp, Xroot, NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE
-
-    currentDesktop = Xroot.get_full_property(NET_CURRENT_DESKTOP, ANY_PROPERTYTYPE).value[0]
-    for winID, winInfo in windowsInfo.items():
-        try:
-            if winInfo['desktop'] == currentDesktop:
-                propertyList = winInfo['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
-                if NET_WM_STATE_STICKY not in propertyList:
-                    if group in winInfo['groups']:
-                        set_window_minimized_state(winInfo['win'], 0)
-                        print(winInfo['name'], 0)
-                    else:
-                        set_window_minimized_state(winInfo['win'], 1)
-                        print(winInfo['name'], 1)
-        except Xlib.error.BadWindow:
-            pass  # window vanished
-    time.sleep(0.2)
-    window_active = disp.get_input_focus().focus
-    tile_windows(window_active, manuallyTriggered=True)
-    windowID_active = Xroot.get_full_property(NET_ACTIVE_WINDOW, ANY_PROPERTYTYPE).value[0]
-
-    return windowID_active, window_active
-# ----------------------------------------------------------------------------------------------------------------------
-
 
 # ----------------------------------------------------------------------------------------------------------------------
 def handle_remote_control_event(event, windowID_active, window_active):
@@ -433,9 +381,7 @@ def handle_remote_control_event(event, windowID_active, window_active):
               'logactivewindow',                 'shrinkmaster',                     # 18, 19
               'enlargemaster',                   'focusleft',                        # 20, 21
               'focusright',                      'focusup',                          # 22, 23
-              'focusdown',                       'focusprevious',                    # 24, 25
-              'togglegroup0',                    'showgroup0',                       # 26, 27
-              'togglegroup1',                    'showgroup1')                       # 28, 29
+              'focusdown',                       'focusprevious')                    # 24, 25                      # 28, 29
 
     cmd = cmdList[cmdNum]
 
