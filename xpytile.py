@@ -244,8 +244,10 @@ def get_windows_on_desktop(desktop):
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
 
-def isFullscreened(window: dict) -> bool:
-    print("window " , type(window))
+def isFullscreened(winID: int) -> bool:
+    dirw = window.keys()
+    for p in dirw:
+        print(tilinginfo['general']['ignoreFullscreenedWindows'])
     return False
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -539,8 +541,7 @@ def init_tiling_info(config):
         return value
 
     # ----------------------------------------------------------------------------
-    def parseConfigIgnoreWindowEntry(entry):
-
+    def parseConfigIgnoreWindowEntry(entry: str):
         retVal = {'name': None, 'title': None, '!title': None}
         strPos_name = strPos_title = None
 
@@ -623,6 +624,11 @@ def init_tiling_info(config):
         tilingInfo['maximizeWhenOneWindowLeft'].append(_temp)
         i += 1
 
+    #   ... weather or not tiler should ignore fullscreened windows
+    tilingInfo["ignoreFullscreenedWindows"] = getConfigValue(config , 'General' , 'ignoreFullscreenedWindows' , False , "bool")
+    print(tilingInfo['ignoreFullscreenedWindows'])
+
+
     #   ... a margin, where edges with a distance smaller than that margin are considered docked.
     tilingInfo['margin'] = getConfigValue(config, 'General', 'margin', 100)
 
@@ -695,7 +701,7 @@ def match(compRexExList, string):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def match_ignore(ignoreWindows, name, title):
+def match_ignore(ignoreWindows, name, title , winID: int):
     """
     Checks whether to ignore the window, depending on its name and title
 
@@ -720,7 +726,7 @@ def match_ignore(ignoreWindows, name, title):
                           f'{"!" * (not e["!title"])}title "{title}" {("does not match", "matches")[e["!title"]]}'
                           f'pattern "{e["title"].pattern}"')
                 return True
-        if isFullscreened(e):
+        if tilinginfo["ignoreFullscreenedWindows"] and isFullscreened(winID):
             return True
 
     return False
@@ -956,7 +962,7 @@ def set_window_decoration(winID, status):
         if window.get_property(GTK_FRAME_EXTENTS, ANY_PROPERTYTYPE, 0, 32) is not None:
             return
         if match_ignore(tilingInfo['ignoreWindowsForDecoration'],
-                        window.get_wm_class()[1], get_windows_title(window)):
+                        window.get_wm_class()[1], get_windows_title(window) , winID):
             return
         
         if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
@@ -1727,7 +1733,7 @@ def update_windows_info(windowID_active=None):
 
             if winID in windowsInfo or not match_ignore(tilingInfo['ignoreWindows'],
                                                         (name := win.get_wm_class()[1]),
-                                                        get_windows_title(win)):
+                                                        get_windows_title(win) , winID):
                 desktop = win.get_full_property(NET_WM_DESKTOP, ANY_PROPERTYTYPE).value[0]
                 geometry = get_window_geometry(win)
                 if geometry is None:  # window vanished
@@ -1925,7 +1931,6 @@ def main():
     try:
         # Initialize
         window_active, window_active_parent, windowID_active = init(configFilePath)
-        print_windows_on_desktop()
         # Run: wait for events and handle them
         run(window_active, window_active_parent, windowID_active)
     except KeyboardInterrupt:
