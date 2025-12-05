@@ -31,6 +31,10 @@ ignoreWindows = name: "Wrapper-2.0"
                 name: "Ulauncher"
                 name: "rofi"
 
+# Ignore all windows that are fullscreened
+ignoreFullscreenedWindows = False
+
+
                 
 # Don't (un)decorate windows when their name AND -if configured- title matches one of these regular expressions.
 # !title means: Ignore window when the name matches AND title does NOT match the regex.
