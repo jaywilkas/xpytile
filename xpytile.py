@@ -244,10 +244,22 @@ def get_windows_on_desktop(desktop):
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
 
-def isFullscreened(winID: int) -> bool:
-    dirw = window.keys()
-    for p in dirw:
-        print(tilinginfo['general']['ignoreFullscreenedWindows'])
+def isFullscreened(winID: int):
+    window = disp.create_resource_object('window', winID)
+
+    width = window.get_geometry()._data["width"]
+    height = window.get_geometry()._data["height"]
+
+    print("window" , width , height)
+    print("screen" , screen.width_in_pixels , screen.height_in_pixels)
+    #if window is full screen, check it the window name
+    if width == screen.width_in_pixels and height == screen.height_in_pixels:
+        #TODO adjust condition for panel
+        print(True)
+        return True
+
+    #if we reach this, no fullscreened window is open
+    print(False)
     return False
 
 # ----------------------------------------------------------------------------------------------------------------------
@@ -726,7 +738,7 @@ def match_ignore(ignoreWindows, name, title , winID: int):
                           f'{"!" * (not e["!title"])}title "{title}" {("does not match", "matches")[e["!title"]]}'
                           f'pattern "{e["title"].pattern}"')
                 return True
-        if tilinginfo["ignoreFullscreenedWindows"] and isFullscreened(winID):
+        if tilingInfo["ignoreFullscreenedWindows"] and isFullscreened(winID):
             return True
 
     return False
