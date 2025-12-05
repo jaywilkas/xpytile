@@ -244,6 +244,10 @@ def get_windows_on_desktop(desktop):
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
 
+def isFullscreened(window: dict) -> bool:
+    print("window " , type(window))
+    return False
+
 # ----------------------------------------------------------------------------------------------------------------------
 @lru_cache
 def get_windows_title(window):
@@ -716,6 +720,8 @@ def match_ignore(ignoreWindows, name, title):
                           f'{"!" * (not e["!title"])}title "{title}" {("does not match", "matches")[e["!title"]]}'
                           f'pattern "{e["title"].pattern}"')
                 return True
+        if isFullscreened(e):
+            return True
 
     return False
 # ----------------------------------------------------------------------------------------------------------------------
@@ -1919,6 +1925,7 @@ def main():
     try:
         # Initialize
         window_active, window_active_parent, windowID_active = init(configFilePath)
+        print_windows_on_desktop()
         # Run: wait for events and handle them
         run(window_active, window_active_parent, windowID_active)
     except KeyboardInterrupt:
