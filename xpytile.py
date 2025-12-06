@@ -257,7 +257,18 @@ def isFullscreened(winID: int):
 
     return False
 
+def isMaximized(winID: int):
+    window = disp.create_resource_object('window', winID)
 
+    NET_WM_STATE = disp.get_atom('_NET_WM_STATE')
+    NET_WM_STATE_MAXIMIZED = disp.get_atom('_NET_WM_STATE_MAXIMIZED')
+    wm_state_list = window.get_full_property(NET_WM_STATE, 0).value.tolist()
+
+    if NET_WM_STATE_MAXIMIZED in wm_state_list:
+        return True
+
+
+    return False
 
 # ----------------------------------------------------------------------------------------------------------------------
 @lru_cache
