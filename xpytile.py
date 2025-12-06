@@ -240,7 +240,7 @@ def get_windows_on_desktop(desktop):
                     winIDs.append(winID)
         except (Xlib.error.BadWindow, AttributeError):
             pass  # window vanished
-
+    print(winIDs)
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -261,12 +261,13 @@ def isMaximized(winID: int):
     window = disp.create_resource_object('window', winID)
 
     NET_WM_STATE = disp.get_atom('_NET_WM_STATE')
-    NET_WM_STATE_MAXIMIZED = disp.get_atom('_NET_WM_STATE_MAXIMIZED')
+    NET_WM_STATE_MAXIMIZED_HORZ = disp.get_atom('_NET_WM_STATE_MAXIMIZED_HORZ')
+    NET_WM_STATE_MAXIMIZED_VERT = disp.get_atom('_NET_WM_STATE_MAXIMIZED_VERT')
     wm_state_list = window.get_full_property(NET_WM_STATE, 0).value.tolist()
 
-    if NET_WM_STATE_MAXIMIZED in wm_state_list:
+    if NET_WM_STATE_MAXIMIZED_HORZ in wm_state_list and NET_WM_STATE_MAXIMIZED_VERT in wm_state_list:
+        print("works?")
         return True
-
 
     return False
 
@@ -755,6 +756,7 @@ def match_ignore(ignoreWindows, name, title , winID: int):
         if tilingInfo["ignoreMaximizedWindows"] and isMaximized(winID):
             return True
 
+        print("doesnt get ignored?")
     return False
 # ----------------------------------------------------------------------------------------------------------------------
 
