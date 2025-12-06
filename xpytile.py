@@ -236,13 +236,39 @@ def get_windows_on_desktop(desktop):
         try:
             if winInfo['desktop'] == desktop:
                 propertyList = windowsInfo[winID]['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
-                if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList:
+                if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList and (not tilingInfo["ignoreMaximizedWindows"] or not isMaximized(winID)):
                     winIDs.append(winID)
         except (Xlib.error.BadWindow, AttributeError):
             pass  # window vanished
-
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
+
+def isFullscreened(winID: int):
+    window = disp.create_resource_object('window', winID)
+
+    NET_WM_STATE = disp.get_atom('_NET_WM_STATE')
+    NET_WM_STATE_FULLSCREEN = disp.get_atom('_NET_WM_STATE_FULLSCREEN')
+    wm_state_list = window.get_full_property(NET_WM_STATE, 0).value.tolist()
+
+    if NET_WM_STATE_FULLSCREEN in wm_state_list:
+        return True
+
+
+    return False
+
+def isMaximized(winID: int):
+    window = disp.create_resource_object('window', winID)
+
+    NET_WM_STATE = disp.get_atom('_NET_WM_STATE')
+    NET_WM_STATE_MAXIMIZED_HORZ = disp.get_atom('_NET_WM_STATE_MAXIMIZED_HORZ')
+    NET_WM_STATE_MAXIMIZED_VERT = disp.get_atom('_NET_WM_STATE_MAXIMIZED_VERT')
+    wm_state_list = window.get_full_property(NET_WM_STATE, 0).value.tolist()
+
+    if NET_WM_STATE_MAXIMIZED_HORZ in wm_state_list and NET_WM_STATE_MAXIMIZED_VERT in wm_state_list:
+        print("works?")
+        return True
+
+    return False
 
 # ----------------------------------------------------------------------------------------------------------------------
 @lru_cache
@@ -535,8 +561,7 @@ def init_tiling_info(config):
         return value
 
     # ----------------------------------------------------------------------------
-    def parseConfigIgnoreWindowEntry(entry):
-
+    def parseConfigIgnoreWindowEntry(entry: str):
         retVal = {'name': None, 'title': None, '!title': None}
         strPos_name = strPos_title = None
 
@@ -619,6 +644,13 @@ def init_tiling_info(config):
         tilingInfo['maximizeWhenOneWindowLeft'].append(_temp)
         i += 1
 
+    #   ... weather or not tiler should ignore fullscreened windows
+    tilingInfo["ignoreFullscreenedWindows"] = getConfigValue(config , 'General' , 'ignoreFullscreenedWindows' , False , "bool")
+
+    #   ... weather or not tiler should ignore maximized windows
+    tilingInfo["ignoreMaximizedWindows"] = getConfigValue(config , 'General' , 'ignoreMaximizedWindows' , False , "bool")
+
+
     #   ... a margin, where edges with a distance smaller than that margin are considered docked.
     tilingInfo['margin'] = getConfigValue(config, 'General', 'margin', 100)
 
@@ -691,7 +723,7 @@ def match(compRexExList, string):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def match_ignore(ignoreWindows, name, title):
+def match_ignore(ignoreWindows, name, title , winID: int):
     """
     Checks whether to ignore the window, depending on its name and title
 
@@ -717,6 +749,13 @@ def match_ignore(ignoreWindows, name, title):
                           f'pattern "{e["title"].pattern}"')
                 return True
 
+        if tilingInfo["ignoreFullscreenedWindows"] and isFullscreened(winID):
+            return True
+        
+        if tilingInfo["ignoreMaximizedWindows"] and isMaximized(winID):
+            return True
+
+        print("doesnt get ignored?")
     return False
 # ----------------------------------------------------------------------------------------------------------------------
 
@@ -775,7 +814,8 @@ def recreate_window_geometries():
             y = tilingInfo['userDefinedGeom'][currentDesktop][winID]['y']
             width = tilingInfo['userDefinedGeom'][currentDesktop][winID]['width']
             height = tilingInfo['userDefinedGeom'][currentDesktop][winID]['height']
-            unmaximize_window(windowsInfo[winID]['win'])
+            if not tilingInfo["ignoreMaximizedWindows"]:
+                unmaximize_window(windowsInfo[winID]['win'])
 
             windowsInfo[winID]['win'].set_input_focus(Xlib.X.RevertToParent, Xlib.X.CurrentTime)
             windowsInfo[winID]['win'].configure(stack_mode=Xlib.X.Above)
@@ -912,7 +952,8 @@ def set_setxy_win(winID):
         return
 
     try:
-        unmaximize_window(windowsInfo[winID]['win'])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winID]['win'])
         oldY = windowsInfo[winID]['y']
         oldX = windowsInfo[winID]['x']
         windowsInfo[winID]['winParent'].configure(y=oldY + 1)
@@ -950,7 +991,7 @@ def set_window_decoration(winID, status):
         if window.get_property(GTK_FRAME_EXTENTS, ANY_PROPERTYTYPE, 0, 32) is not None:
             return
         if match_ignore(tilingInfo['ignoreWindowsForDecoration'],
-                        window.get_wm_class()[1], get_windows_title(window)):
+                        window.get_wm_class()[1], get_windows_title(window) , winID):
             return
         
         if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
@@ -1328,7 +1369,9 @@ def tile_windows_horizontally(desktop):
     for i, winID in enumerate(winIDs[I:N]):
         if i == N - 1:
             width = workAreaWidth + workAreaX0 - x + 1
-        unmaximize_window(windowsInfo[winID]["win"])
+
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=workAreaY0)
         set_window_size(winID, width=width, height=workAreaHeight + 1)
@@ -1394,7 +1437,8 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
             return
     else:
         # the window needs to be repositioned
-        unmaximize_window(windowsInfo[winIDs[0]]["win"])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winIDs[0]]["win"])
         height = int(workAreaHeight * tilingInfo['masterAndStackHoriz']['defaultHeightMaster'])
         set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         set_window_size(winIDs[0], width=workAreaWidth, height=height)
@@ -1409,7 +1453,8 @@ def tile_windows_master_and_stack_horizontally(desktop, resizeMaster=0):
     for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
             width = workAreaWidth + workAreaX0 - x + 1
-        unmaximize_window(windowsInfo[winID]["win"])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
@@ -1475,7 +1520,8 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
             return
     else:
         # the window needs to be repositioned
-        unmaximize_window(windowsInfo[winIDs[0]]['win'])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winIDs[0]]['win'])
         width = int(workAreaWidth * tilingInfo['masterAndStackVertic']['defaultWidthMaster']) + resizeMaster
         set_window_position(winIDs[0], x=workAreaX0, y=workAreaY0)
         set_window_size(winIDs[0], width=width, height=workAreaHeight)
@@ -1490,7 +1536,8 @@ def tile_windows_master_and_stack_vertically(desktop, resizeMaster=0):
     for i, winID in enumerate(winIDs[1:N + 1]):
         if i == N - 1:
             height = workAreaHeight + workAreaY0 - y + 1
-        unmaximize_window(windowsInfo[winID]["win"])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            unmaximize_window(windowsInfo[winID]["win"])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=x, y=y)
         set_window_size(winID, width=width, height=height)
@@ -1573,7 +1620,8 @@ def tile_windows_vertically(desktop):
     for i, winID in enumerate(winIDs[:N]):
         if i == N - 1:
             height = workAreaHeight + workAreaY0 - y + 1
-        unmaximize_window(windowsInfo[winID]['win'])
+        if not tilingInfo["ignoreMaximizedWindows"]:
+            cunmaximize_window(windowsInfo[winID]['win'])
         set_window_decoration(winID, tilingInfo['windowDecoration'][desktop])
         set_window_position(winID, x=workAreaX0, y=y)
         set_window_size(winID, width=workAreaWidth, height=height)
@@ -1721,7 +1769,7 @@ def update_windows_info(windowID_active=None):
 
             if winID in windowsInfo or not match_ignore(tilingInfo['ignoreWindows'],
                                                         (name := win.get_wm_class()[1]),
-                                                        get_windows_title(win)):
+                                                        get_windows_title(win) , winID):
                 desktop = win.get_full_property(NET_WM_DESKTOP, ANY_PROPERTYTYPE).value[0]
                 geometry = get_window_geometry(win)
                 if geometry is None:  # window vanished
