@@ -236,11 +236,10 @@ def get_windows_on_desktop(desktop):
         try:
             if winInfo['desktop'] == desktop:
                 propertyList = windowsInfo[winID]['win'].get_full_property(NET_WM_STATE, 0).value.tolist()
-                if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList:
+                if NET_WM_STATE_STICKY not in propertyList and NET_WM_STATE_HIDDEN not in propertyList and (not tilingInfo["ignoreMaximizedWindows"] or not isMaximized(winID)):
                     winIDs.append(winID)
         except (Xlib.error.BadWindow, AttributeError):
             pass  # window vanished
-    print(winIDs)
     return winIDs
 # ----------------------------------------------------------------------------------------------------------------------
 
