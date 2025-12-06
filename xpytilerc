@@ -34,6 +34,9 @@ ignoreWindows = name: "Wrapper-2.0"
 # Ignore all windows that are fullscreened
 ignoreFullscreenedWindows = False
 
+# Ignore all windows that are maximized
+ignoreMaximizedWindows = False 
+
 
                 
 # Don't (un)decorate windows when their name AND -if configured- title matches one of these regular expressions.
