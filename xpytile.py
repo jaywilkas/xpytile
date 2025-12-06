@@ -247,20 +247,17 @@ def get_windows_on_desktop(desktop):
 def isFullscreened(winID: int):
     window = disp.create_resource_object('window', winID)
 
-    width = window.get_geometry()._data["width"]
-    height = window.get_geometry()._data["height"]
+    NET_WM_STATE = disp.get_atom('_NET_WM_STATE')
+    NET_WM_STATE_FULLSCREEN = disp.get_atom('_NET_WM_STATE_FULLSCREEN')
+    wm_state_list = window.get_full_property(NET_WM_STATE, 0).value.tolist()
 
-    print("window" , width , height)
-    print("screen" , screen.width_in_pixels , screen.height_in_pixels)
-    #if window is full screen, check it the window name
-    if width == screen.width_in_pixels and height == screen.height_in_pixels:
-        #TODO adjust condition for panel
-        print(True)
+    if NET_WM_STATE_FULLSCREEN in wm_state_list:
         return True
 
-    #if we reach this, no fullscreened window is open
-    print(False)
+
     return False
+
+
 
 # ----------------------------------------------------------------------------------------------------------------------
 @lru_cache
