@@ -537,7 +537,8 @@ def init_tiling_info(config):
         return value
 
     # ----------------------------------------------------------------------------
-    def parseConfigIgnoreWindowEntry(entry: str):
+    def parseConfigIgnoreWindowEntry(entry):
+
         retVal = {'name': None, 'title': None, '!title': None}
         strPos_name = strPos_title = None
 
@@ -750,7 +751,7 @@ def match(compRexExList, string):
 # ----------------------------------------------------------------------------------------------------------------------
 
 # ----------------------------------------------------------------------------------------------------------------------
-def match_ignore(ignoreWindows, name, title , winID: int):
+def match_ignore(ignoreWindows, name, title):
     """
     Checks whether to ignore the window, depending on its name and title
 
@@ -1008,7 +1009,7 @@ def set_window_decoration(winID, status):
         if window.get_property(GTK_FRAME_EXTENTS, ANY_PROPERTYTYPE, 0, 32) is not None:
             return
         if match_ignore(tilingInfo['ignoreWindowsForDecoration'],
-                        window.get_wm_class()[1], get_windows_title(window) , winID):
+                        window.get_wm_class()[1], get_windows_title(window)):
             return
 
         if (result := window.get_property(MOTIF_WM_HINTS, ANY_PROPERTYTYPE, 0, 32)):
@@ -1736,7 +1737,7 @@ def update_windows_info(windowID_active=None):
     Update the dictionary containing all windows, parent-windows, names, desktop-number and geometry.
     Windows with names / titles that match the ignore-list and modal and sticky windows are not taken into account.
 
-    :param window_active:     active windo
+    :param window_active:     active window
     :return: status           whether the number of windows has changed,  and
              desktopList      list of desktops, when a window got moved from one desktop to another
     """
@@ -1780,7 +1781,7 @@ def update_windows_info(windowID_active=None):
 
             if winID in windowsInfo or not match_ignore(tilingInfo['ignoreWindows'],
                                                         (name := win.get_wm_class()[1]),
-                                                        get_windows_title(win) , winID):
+                                                        get_windows_title(win)):
                 desktop = win.get_full_property(NET_WM_DESKTOP, ANY_PROPERTYTYPE).value[0]
                 geometry = get_window_geometry(win)
                 if geometry is None:  # window vanished
