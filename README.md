@@ -38,7 +38,7 @@ Option to set the mouse-cursor in the middle of the new active window, when chan
 &nbsp; &nbsp; _This visual feedback is helpful, especially when the window decoration is turned off._  
 Focus can be set to next adjacent window, in the direction of the pressed arrow-key  
 Max. number of tiled windows for the currently active tiler can be increased/decreased per hot-key  
-
+Maximized and/or full-screened windows may be ignored, i.e. won't get tiled  
 
 # Hotkeys
 Hotkeys can be defined in the config-file.  
